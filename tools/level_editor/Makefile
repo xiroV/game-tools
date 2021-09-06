@@ -1,6 +1,6 @@
 CC = g++
 LIBS = -lraylib -lpthread -lrt -lm -ldl
-CFLAGS = -Wall
+CFLAGS = -Wall -std=c++17
 
 
 all:	editor	
