@@ -8,8 +8,9 @@
 
 using namespace std;
 
-const int WINDOW_WIDTH = 800;
-const int WINDOW_HEIGHT = 500;
+const int WINDOW_WIDTH = 1600;
+const int WINDOW_HEIGHT = 1000;
+const int FONT_SIZE = 20;
 const int MOVE_INTERVAL = 10;
 const int RESIZE_INTERVAL = 50;
 const int CAMERA_MOVE_SPEED = 5;
@@ -26,10 +27,10 @@ string levelName = "";
 
 enum ObjectType {
     Block,
-    Spawn 
+    Spawn
 };
 
-vector<ObjectType> objectTypes = { ObjectType::Block, ObjectType::Spawn };
+vector<ObjectType> objectTypes = { ObjectType::Block, ObjectType::Spawn};
 
 
 struct Object {
@@ -291,51 +292,77 @@ void control() {
 }
 
 void drawMenu() {
-    DrawText("[n] new", WINDOW_WIDTH-105+20, 10, 10, LIGHTGRAY);
-    DrawText("[arrows] move ", WINDOW_WIDTH-105+20, 25, 10, LIGHTGRAY);
-    DrawText("[wasd] resize", WINDOW_WIDTH-105+20, 40, 10, LIGHTGRAY);
-    DrawText("[del] delete", WINDOW_WIDTH-105+20, 55, 10, LIGHTGRAY);
-    DrawText("[t] switch type", WINDOW_WIDTH-105+20, 70, 10, LIGHTGRAY);
-    DrawText("[page/up] zoom", WINDOW_WIDTH-105+20, 85, 10, LIGHTGRAY);
+    int xpos = WINDOW_WIDTH-FONT_SIZE*8;
+
+    vector<const char*> entries = {
+        "[n] new",
+        "[arrows] move",
+        "[wasd] resize",
+        "[del] delete",
+        "[t] switch type",
+        "[page/up] zoom"
+    };
+
+    int ypos = 10;
+    for (unsigned int i = 0; i < entries.size(); i++) {
+        DrawText(entries[i], xpos, ypos, FONT_SIZE, LIGHTGRAY);
+        ypos += 8+FONT_SIZE;
+    }
+
+
+    if (isElementSelected()) {
+        DrawText(
+            objectTypeToString(objects[selected].type).c_str(),
+            WINDOW_WIDTH-20-objectTypeToString(objects[selected].type).size()*FONT_SIZE*0.6,
+            WINDOW_HEIGHT-30,
+            FONT_SIZE,
+            objectTypeColor(objects[selected].type) 
+        );
+    }
 }
 
-void drawObjects() {
+void drawObjects(Camera2D* camera) {
     for (unsigned int i = 0; i < objects.size(); i++) {
         DrawRectangle(objects[i].x, objects[i].y, objects[i].width, objects[i].height, objectTypeColor(objects[i].type));
-        DrawText(objectTypeToString(objects[i].type).c_str(), objects[i].x+2, objects[i].y+2, 10, RAYWHITE);
     }
 
     if (isElementSelected()) {
-        DrawRectangleLines(
-            objects[selected].x,
-            objects[selected].y,
-            objects[selected].width,
-            objects[selected].height,
+        DrawRectangleLinesEx(
+            Rectangle {
+                (float)objects[selected].x,
+                (float)objects[selected].y,
+                (float)objects[selected].width,
+                (float)objects[selected].height,
+            },
+            6-camera->zoom*2,
             GREEN
         );
     }
 }
 
 void drawWindows () {
+    int scale = FONT_SIZE/10;
+    int yBase = 120+FONT_SIZE;
+
     if (exitWindow) {
         DrawRectangle(100, 100, WINDOW_WIDTH-200, WINDOW_HEIGHT-200, RAYWHITE);
-        DrawText("Please enter a level name", 120, 120, 10, BLACK);
-        DrawText(levelName.c_str(), 130, 145, 10, BLACK);
-        DrawRectangleLines(120, 140, WINDOW_WIDTH-240, 20, BLACK);
+        DrawText("Please enter a level name", 120, yBase, FONT_SIZE, BLACK);
+        DrawText(levelName.c_str(), 130, yBase+FONT_SIZE*2+FONT_SIZE/2, FONT_SIZE, BLACK);
+        DrawRectangleLines(120, yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
 
-        DrawText("Save & Exit", 130, 185, 10, BLACK);
-        DrawText("Close without saving", 220, 185, 10, BLACK);
-        DrawText("Cancel", 350, 185, 10, BLACK);
+        DrawText("Save & Exit", 120+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
+        DrawText("Close without saving", 120+75*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
+        DrawText("Cancel", 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
 
         switch(exitWindowSelectedOption) {
             case 0:
-                DrawRectangleLines(120, 180, 80, 20, BLACK);
+                DrawRectangleLines(120, yBase+FONT_SIZE*5, 75*scale, FONT_SIZE*2, BLACK);
                 break;
             case 1:
-                DrawRectangleLines(210, 180, 120, 20, BLACK);
+                DrawRectangleLines(120+75*scale+FONT_SIZE, yBase+FONT_SIZE*5, 120*scale, FONT_SIZE*2, BLACK);
                 break;
             case 2:
-                DrawRectangleLines(340, 180, 80, 20, BLACK);
+                DrawRectangleLines(120+75*scale+FONT_SIZE+120*scale+FONT_SIZE, yBase+FONT_SIZE*5, 60*scale, FONT_SIZE*2, BLACK);
                 break;
         }
 
@@ -352,7 +379,6 @@ int main(int argc, char **argv) {
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
 
-
     if (argc > 1) {
         filename = argv[1];
         loadLevel();
@@ -362,12 +388,12 @@ int main(int argc, char **argv) {
         control();
 
         camera.zoom += cameraZoom;
-        if (camera.zoom > 3.0f) {
-            cameraZoom = 3.0f;
+        if (camera.zoom > 2.0f) {
+            cameraZoom = 2.0f;
             camera.zoom = cameraZoom;
         }
-        else if (camera.zoom < 0.1f) {
-            cameraZoom = 0.1f;
+        else if (camera.zoom < 0.5f) {
+            cameraZoom = 0.5f;
             camera.zoom = cameraZoom;
         }
 
@@ -375,8 +401,8 @@ int main(int argc, char **argv) {
 
         BeginDrawing();
             BeginMode2D(camera);
-                ClearBackground(BLACK);
-                drawObjects();
+                ClearBackground(DARKGRAY);
+                drawObjects(&camera);
             EndMode2D();
             drawMenu();
             drawWindows();
