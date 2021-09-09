@@ -4,7 +4,7 @@
 #include<typeinfo>
 #include<vector>
 #include<fstream>
-#include<raylib.h>
+// #include<raylib.h>
 
 using namespace std;
 
@@ -19,7 +19,6 @@ Vector2 cameraTarget = {WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
 float cameraZoom = 1.0f;
 
 bool closeEditor = false;
-bool exitWindow = false;
 int exitWindowSelectedOption = 0;
 
 string filename = "";
@@ -32,16 +31,31 @@ enum ObjectType {
 
 vector<ObjectType> objectTypes = { ObjectType::Block, ObjectType::Spawn};
 
+enum class EditorState {
+    Editing,
+    Closing
+};
+
+
+
+struct ObjectData {
+    string key;
+    string value;
+};
 
 struct Object {
     int x, y, width, height;
     int type;
+    vector<ObjectType> data;
 };
 
-Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};
+struct Editor {
+    EditorState state;
+    vector<Object> objects; 
+    int selectedObject;
+};
 
-vector<Object> objects;    
-int selected = -1;
+Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
 
 string objectTypeToString(int type) {
     switch(type) {
@@ -122,62 +136,60 @@ bool isElementSelected() {
     return false;
 }
 
-bool isWindowOpen() {
-    if (exitWindow) {
+bool isExitWindowOpen(EditorState state) {
+    if (EditorState::Closing == state) {
         return true;
     }
     return false;
 }
 
-void control() {
+void control(EditorState *state) {
     // EXIT WINDOW
     if (WindowShouldClose()) {
         if (isElementSelected()) {
             selected = -1;
         } else {
-            exitWindow = true;
+            state = EditorState::Closing;
         }
     }
 
-    if (isWindowOpen()) {
-        if (exitWindow) {
-            if (IsKeyPressed(KEY_ENTER)) {
-                if (exitWindowSelectedOption == 0) {
-                    if (levelName.size() > 0) {
-                        filename = levelName + ".lvl";
-                        saveLevel();
-                        closeEditor = true;
-                    }
-                } else if(exitWindowSelectedOption == 1) {
-                    closeEditor = true;
-                } else {
-                    exitWindow = false;
-                }
-            }
-
-            if (IsKeyPressed(KEY_TAB)) {
-                if (exitWindowSelectedOption == 0) {
-                    exitWindowSelectedOption = 1;
-                } else if (exitWindowSelectedOption == 1) {
-                    exitWindowSelectedOption = 2;
-                } else {
-                    exitWindowSelectedOption = 0;
-                }
-            } 
-
-            int key = GetCharPressed();
-            while(key > 0) {
-                if (levelName.size() < 60) {
-                    levelName.push_back((char)key);
-                }
-
-                key = GetCharPressed();
-            }
-
-            if (IsKeyPressed(KEY_BACKSPACE)) {
+    if (isExitWindowOpen()) {
+        if (IsKeyPressed(KEY_ENTER)) {
+            if (exitWindowSelectedOption == 0) {
                 if (levelName.size() > 0) {
-                    levelName.pop_back();
+                    filename = levelName + ".lvl";
+                    saveLevel();
+                    closeEditor = true;
                 }
+            } else if(exitWindowSelectedOption == 1) {
+                closeEditor = true;
+            } else {
+                exitWindow = false;
+            }
+        }
+
+        if (IsKeyPressed(KEY_TAB)) {
+            if (exitWindowSelectedOption == 0) {
+                exitWindowSelectedOption = 1;
+            } else if (exitWindowSelectedOption == 1) {
+                exitWindowSelectedOption = 2;
+            } else {
+                exitWindowSelectedOption = 0;
+            }
+        } 
+
+        int key = GetCharPressed();
+        while(key > 0) {
+            if (levelName.size() < 60) {
+                levelName.push_back((char)key);
+            }
+
+            key = GetCharPressed();
+        }
+
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            if (levelName.size() > 0) {
+                levelName.pop_back();
             }
         }
     } else {
@@ -321,7 +333,7 @@ void drawMenu() {
     }
 }
 
-void drawObjects(Camera2D* camera) {
+void drawObjects(Camera2D *camera) {
     for (unsigned int i = 0; i < objects.size(); i++) {
         DrawRectangle(objects[i].x, objects[i].y, objects[i].width, objects[i].height, objectTypeColor(objects[i].type));
     }
@@ -378,6 +390,10 @@ int main(int argc, char **argv) {
     camera.offset = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
+
+    Editor editor = {};
+    editor.state = EditorState::Editing;
+    editor.selectedObject = -1;
 
     if (argc > 1) {
         filename = argv[1];
