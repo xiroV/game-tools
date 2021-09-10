@@ -33,7 +33,8 @@ vector<ObjectType> objectTypes = { ObjectType::Block, ObjectType::Spawn};
 
 enum class EditorState {
     Editing,
-    Closing
+    Closing,
+    ShowKeyValue
 };
 
 
@@ -46,7 +47,7 @@ struct ObjectData {
 struct Object {
     int x, y, width, height;
     int type;
-    vector<ObjectType> data;
+    vector<ObjectData> data;
 };
 
 struct Editor {
@@ -153,153 +154,182 @@ void control(Editor *editor) {
         }
     }
 
-    if (isExitWindowOpen(editor->state)) {
-        if (IsKeyPressed(KEY_ENTER)) {
-            if (exitWindowSelectedOption == 0) {
-                if (levelName.size() > 0) {
-                    filename = levelName + ".lvl";
-                    saveLevel(editor);
-                    closeEditor = true;
-                }
-            } else if(exitWindowSelectedOption == 1) {
-                closeEditor = true;
-            } else {
-                editor->state = EditorState::Closing;
-            }
-        }
-
-        if (IsKeyPressed(KEY_TAB)) {
-            if (exitWindowSelectedOption == 0) {
-                exitWindowSelectedOption = 1;
-            } else if (exitWindowSelectedOption == 1) {
-                exitWindowSelectedOption = 2;
-            } else {
-                exitWindowSelectedOption = 0;
-            }
-        } 
-
-        int key = GetCharPressed();
-        while(key > 0) {
-            if (levelName.size() < 60) {
-                levelName.push_back((char)key);
-            }
-
-            key = GetCharPressed();
-        }
-
-        if (IsKeyPressed(KEY_BACKSPACE)) {
-            if (levelName.size() > 0) {
-                levelName.pop_back();
-            }
-        }
-    } else {
-        if (IsKeyPressed(KEY_PAGE_UP)) {
-            cameraZoom += 0.5;
-        }
-
-        if (IsKeyPressed(KEY_PAGE_DOWN)) {
-            cameraZoom -= 0.5;
-        }
-   
-
-        // NEW OBJECT
-        if (IsKeyPressed(KEY_N)) {
-            Object obj = {WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100};
-            editor->objects.push_back(obj);
-            editor->selectedObject = editor->objects.size()-1;
-        }
-
-        // SWITCH SELECTED
-        if (IsKeyPressed(KEY_TAB)) {
-            if (editor->selectedObject + 1 < editor->objects.size()) {
-                editor->selectedObject += 1;
-            } else {
-                if (editor->objects.size() > 0) {
-                    editor->selectedObject = 0;
-                } else {
-                    editor->selectedObject = -1;
-                }
-                        
-            }
-        }
-
-        if (isElementSelected(editor)) {
-            // MOVEMENT
-            if (IsKeyPressed(KEY_UP)) {
-                editor->objects[editor->selectedObject].y -= MOVE_INTERVAL;
-            }
-
-            if (IsKeyPressed(KEY_DOWN)) {
-                editor->objects[editor->selectedObject].y += MOVE_INTERVAL;
-            }
-
-            if (IsKeyPressed(KEY_LEFT)) {
-                editor->objects[editor->selectedObject].x -= MOVE_INTERVAL;
-            }
-
-            if (IsKeyPressed(KEY_RIGHT)) {
-                editor->objects[editor->selectedObject].x += MOVE_INTERVAL;
-            }
-
-            // RESIZING
-            if (IsKeyPressed(KEY_W)) {
-                editor->objects[editor->selectedObject].height += RESIZE_INTERVAL;
-            }
-
-            if (IsKeyPressed(KEY_S)) {
-                if (editor->objects[editor->selectedObject].height >= RESIZE_INTERVAL) {
-                    editor->objects[editor->selectedObject].height -= RESIZE_INTERVAL;
-                }
-            }
-
-            if (IsKeyPressed(KEY_A)) {
-                if (editor->objects[editor->selectedObject].width >= RESIZE_INTERVAL) {
-                    editor->objects[editor->selectedObject].width -= RESIZE_INTERVAL;
-                }
-            }
-
-            if (IsKeyPressed(KEY_D)) {
-                editor->objects[editor->selectedObject].width += RESIZE_INTERVAL;
-            }
-
-            // DELETE
-            if (IsKeyPressed(KEY_DELETE)) {
-                editor->objects.erase(editor->objects.begin() + editor->selectedObject);
-                if (editor->objects.size() > 0) {
-                    editor->selectedObject = 0;
-                } else {
-                    editor->selectedObject = -1;
-                }
-            }
-
-            // CHANGE TYPE
-            if (IsKeyPressed(KEY_T)) {
-                if (editor->objects[editor->selectedObject].type+1 >= objectTypes.size()) {
-                    editor->objects[editor->selectedObject].type = 0;
-                } else {
-                    editor->objects[editor->selectedObject].type += 1;
-                }
-            }
-        } else {
-            // MOVEMENT
-            if (IsKeyDown(KEY_UP)) {
-                cameraTarget.y -= CAMERA_MOVE_SPEED;
-            }
-
-            if (IsKeyDown(KEY_DOWN)) {
-                cameraTarget.y += CAMERA_MOVE_SPEED;
-            }
-
-            if (IsKeyDown(KEY_LEFT)) {
-                cameraTarget.x -= CAMERA_MOVE_SPEED;
-            }
-
-            if (IsKeyDown(KEY_RIGHT)) {
-                cameraTarget.x += CAMERA_MOVE_SPEED;
-            }
-
-        }
     
+    switch (editor->state) {
+        case EditorState::Closing: {
+            if (IsKeyPressed(KEY_ENTER)) {
+                if (exitWindowSelectedOption == 0) {
+                    if (levelName.size() > 0) {
+                        filename = levelName + ".lvl";
+                        saveLevel(editor);
+                        closeEditor = true;
+                    }
+                } else if(exitWindowSelectedOption == 1) {
+                    closeEditor = true;
+                } else {
+                    editor->state = EditorState::Editing;
+                }
+            }
+
+            if (IsKeyPressed(KEY_TAB)) {
+                if (exitWindowSelectedOption == 0) {
+                    exitWindowSelectedOption = 1;
+                } else if (exitWindowSelectedOption == 1) {
+                    exitWindowSelectedOption = 2;
+                } else {
+                    exitWindowSelectedOption = 0;
+                }
+            } 
+
+            int key = GetCharPressed();
+            while(key > 0) {
+                if (levelName.size() < 60) {
+                    levelName.push_back((char)key);
+                }
+
+                key = GetCharPressed();
+            }
+
+            if (IsKeyPressed(KEY_BACKSPACE)) {
+                if (levelName.size() > 0) {
+                    levelName.pop_back();
+                }
+            }
+            break;
+        } 
+        case EditorState::ShowKeyValue: {
+            if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_V)) {
+                editor->state = EditorState::Editing;
+            }
+            break;
+        }
+        case EditorState::Editing: {
+            if (IsKeyPressed(KEY_PAGE_UP)) {
+                cameraZoom += 0.5;
+            }
+
+            if (IsKeyPressed(KEY_PAGE_DOWN)) {
+                cameraZoom -= 0.5;
+            }
+    
+
+            // NEW OBJECT
+            if (IsKeyPressed(KEY_N)) {
+                Object obj = {WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100};
+                editor->objects.push_back(obj);
+                editor->selectedObject = editor->objects.size()-1;
+            }
+
+            // SWITCH SELECTED
+            if (IsKeyPressed(KEY_TAB)) {
+                if (editor->selectedObject + 1 < editor->objects.size()) {
+                    editor->selectedObject += 1;
+                } else {
+                    if (editor->objects.size() > 0) {
+                        editor->selectedObject = 0;
+                    } else {
+                        editor->selectedObject = -1;
+                    }
+                            
+                }
+            }
+            if (isElementSelected(editor)) {
+                // MOVEMENT
+                if (IsKeyPressed(KEY_UP)) {
+                    editor->objects[editor->selectedObject].y -= MOVE_INTERVAL;
+                }
+
+                if (IsKeyPressed(KEY_DOWN)) {
+                    editor->objects[editor->selectedObject].y += MOVE_INTERVAL;
+                }
+
+                if (IsKeyPressed(KEY_LEFT)) {
+                    editor->objects[editor->selectedObject].x -= MOVE_INTERVAL;
+                }
+
+                if (IsKeyPressed(KEY_RIGHT)) {
+                    editor->objects[editor->selectedObject].x += MOVE_INTERVAL;
+                }
+
+                // RESIZING
+                if (IsKeyPressed(KEY_W)) {
+                    editor->objects[editor->selectedObject].height += RESIZE_INTERVAL;
+                }
+
+                if (IsKeyPressed(KEY_S)) {
+                    if (editor->objects[editor->selectedObject].height >= RESIZE_INTERVAL) {
+                        editor->objects[editor->selectedObject].height -= RESIZE_INTERVAL;
+                    }
+                }
+
+                if (IsKeyPressed(KEY_A)) {
+                    if (editor->objects[editor->selectedObject].width >= RESIZE_INTERVAL) {
+                        editor->objects[editor->selectedObject].width -= RESIZE_INTERVAL;
+                    }
+                }
+
+                if (IsKeyPressed(KEY_D)) {
+                    editor->objects[editor->selectedObject].width += RESIZE_INTERVAL;
+                }
+
+                // DELETE
+                if (IsKeyPressed(KEY_DELETE)) {
+                    editor->objects.erase(editor->objects.begin() + editor->selectedObject);
+                    if (editor->objects.size() > 0) {
+                        editor->selectedObject = 0;
+                    } else {
+                        editor->selectedObject = -1;
+                    }
+                }
+
+                // CHANGE TYPE
+                if (IsKeyPressed(KEY_T)) {
+                    if (editor->objects[editor->selectedObject].type+1 >= objectTypes.size()) {
+                        editor->objects[editor->selectedObject].type = 0;
+                    } else {
+                        editor->objects[editor->selectedObject].type += 1;
+                    }
+                }
+
+                // OPEN KEY VALUE WINDOW
+                if (IsKeyPressed(KEY_V)) {
+                    editor->state = EditorState::ShowKeyValue;
+                }
+
+            } else {
+                // MOVEMENT
+                if (IsKeyDown(KEY_UP)) {
+                    cameraTarget.y -= CAMERA_MOVE_SPEED;
+                }
+
+                if (IsKeyDown(KEY_DOWN)) {
+                    cameraTarget.y += CAMERA_MOVE_SPEED;
+                }
+
+                if (IsKeyDown(KEY_LEFT)) {
+                    cameraTarget.x -= CAMERA_MOVE_SPEED;
+                }
+
+                if (IsKeyDown(KEY_RIGHT)) {
+                    cameraTarget.x += CAMERA_MOVE_SPEED;
+                }
+
+            }
+            break;
+        }
+    }
+}
+
+void drawKeyValueList(Editor *editor) {
+    if (editor->selectedObject == -1 || editor->state != EditorState::ShowKeyValue) return;
+    DrawRectangle(5, 5, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, GRAY);
+    auto &element = editor->objects[editor->selectedObject];
+
+    int offsetY = 10;
+    for (auto &entry : element.data) {
+        DrawText(entry.key.c_str(), 15, offsetY, FONT_SIZE, WHITE);
+        DrawText(entry.key.c_str(), 15 + WINDOW_WIDTH / 2, offsetY, FONT_SIZE, WHITE);
+        offsetY += FONT_SIZE + 4;
     }
 }
 
@@ -352,7 +382,7 @@ void drawObjects(Camera2D *camera, Editor *editor) {
     }
 }
 
-void drawWindows (Editor *editor) {
+void drawWindows(Editor *editor) {
     int scale = FONT_SIZE/10;
     int yBase = 120+FONT_SIZE;
 
@@ -382,7 +412,7 @@ void drawWindows (Editor *editor) {
 }
 
 int main(int argc, char **argv) {
-    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "RPG Project Level Editor");
+    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Level Editor");
     SetTargetFPS(60);
 
     Camera2D camera = {0};
@@ -394,6 +424,13 @@ int main(int argc, char **argv) {
     Editor editor = {};
     editor.state = EditorState::Editing;
     editor.selectedObject = -1;
+    // editor.state = EditorState::Editing;
+    // editor.selectedObject = 0;
+    // editor.objects.push_back({WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100});
+    // editor.objects[0].data.push_back({"foo", "bar"});
+    // editor.objects[0].data.push_back({"foo", "bar"});
+    // editor.objects[0].data.push_back({"foo", "bar"});
+    // editor.objects[0].data.push_back({"foo", "bar"});
 
     if (argc > 1) {
         filename = argv[1];
@@ -422,6 +459,7 @@ int main(int argc, char **argv) {
             EndMode2D();
             drawMenu(&editor);
             drawWindows(&editor);
+            drawKeyValueList(&editor);
         EndDrawing();
 
         camera.zoom = 0;
