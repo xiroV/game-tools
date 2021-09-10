@@ -4,7 +4,7 @@
 #include<typeinfo>
 #include<vector>
 #include<fstream>
-// #include<raylib.h>
+#include<raylib.h>
 
 using namespace std;
 
@@ -79,16 +79,16 @@ Color objectTypeColor(int type) {
     }
 }
 
-void saveLevel() {
+void saveLevel(Editor *editor) {
     ofstream levelFile;
     levelFile.open(filename, ios::out);
 
     if(levelFile.is_open()) {
-        cout << "Saving " << objects.size() << " objects" << endl;
+        cout << "Saving " << editor->objects.size() << " objects" << endl;
 
-        for (unsigned int i = 0; i < objects.size(); i++) {
-            levelFile << objects[i].x << " " << objects[i].y <<
-                " " << objects[i].width << " " << objects[i].height << " " << objects[i].type << endl;
+        for (unsigned int i = 0; i < editor->objects.size(); i++) {
+            levelFile << editor->objects[i].x << " " << editor->objects[i].y <<
+                " " << editor->objects[i].width << " " << editor->objects[i].height << " " << editor->objects[i].type << endl;
         }
     } else {
         cout << "Unable to open file " << filename << endl;
@@ -97,7 +97,7 @@ void saveLevel() {
     levelFile.close();
 }
 
-void loadLevel() {
+void loadLevel(Editor *editor) {
     cout << "Loading level file: " << filename << endl;
 
     string fileLine;
@@ -116,7 +116,7 @@ void loadLevel() {
             }
 
             Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4]};
-            objects.push_back(obj);
+            editor->objects.push_back(obj);
         }
     } else {
         cout << "Unable to open file" << endl; 
@@ -125,12 +125,12 @@ void loadLevel() {
 
     levelFile.close();
 
-    cout << "Loaded " << objects.size() << " objects" << endl;
+    cout << "Loaded " << editor->objects.size() << " objects" << endl;
 }
 
 
-bool isElementSelected() {
-    if (selected >= 0 && selected < objects.size()) {
+bool isElementSelected(Editor *editor) {
+    if (editor->selectedObject >= 0 && editor->selectedObject < editor->objects.size()) {
         return true;
     }
     return false;
@@ -143,28 +143,28 @@ bool isExitWindowOpen(EditorState state) {
     return false;
 }
 
-void control(EditorState *state) {
+void control(Editor *editor) {
     // EXIT WINDOW
     if (WindowShouldClose()) {
-        if (isElementSelected()) {
-            selected = -1;
+        if (isElementSelected(editor)) {
+            editor->selectedObject = -1;
         } else {
-            state = EditorState::Closing;
+            editor->state = EditorState::Closing;
         }
     }
 
-    if (isExitWindowOpen()) {
+    if (isExitWindowOpen(editor->state)) {
         if (IsKeyPressed(KEY_ENTER)) {
             if (exitWindowSelectedOption == 0) {
                 if (levelName.size() > 0) {
                     filename = levelName + ".lvl";
-                    saveLevel();
+                    saveLevel(editor);
                     closeEditor = true;
                 }
             } else if(exitWindowSelectedOption == 1) {
                 closeEditor = true;
             } else {
-                exitWindow = false;
+                editor->state = EditorState::Closing;
             }
         }
 
@@ -205,79 +205,79 @@ void control(EditorState *state) {
         // NEW OBJECT
         if (IsKeyPressed(KEY_N)) {
             Object obj = {WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100};
-            objects.push_back(obj);
-            selected = objects.size()-1;
+            editor->objects.push_back(obj);
+            editor->selectedObject = editor->objects.size()-1;
         }
 
         // SWITCH SELECTED
         if (IsKeyPressed(KEY_TAB)) {
-            if (selected + 1 < objects.size()) {
-                selected += 1;
+            if (editor->selectedObject + 1 < editor->objects.size()) {
+                editor->selectedObject += 1;
             } else {
-                if (objects.size() > 0) {
-                    selected = 0;
+                if (editor->objects.size() > 0) {
+                    editor->selectedObject = 0;
                 } else {
-                    selected = -1;
+                    editor->selectedObject = -1;
                 }
                         
             }
         }
 
-        if (isElementSelected()) {
+        if (isElementSelected(editor)) {
             // MOVEMENT
             if (IsKeyPressed(KEY_UP)) {
-                objects[selected].y -= MOVE_INTERVAL;
+                editor->objects[editor->selectedObject].y -= MOVE_INTERVAL;
             }
 
             if (IsKeyPressed(KEY_DOWN)) {
-                objects[selected].y += MOVE_INTERVAL;
+                editor->objects[editor->selectedObject].y += MOVE_INTERVAL;
             }
 
             if (IsKeyPressed(KEY_LEFT)) {
-                objects[selected].x -= MOVE_INTERVAL;
+                editor->objects[editor->selectedObject].x -= MOVE_INTERVAL;
             }
 
             if (IsKeyPressed(KEY_RIGHT)) {
-                objects[selected].x += MOVE_INTERVAL;
+                editor->objects[editor->selectedObject].x += MOVE_INTERVAL;
             }
 
             // RESIZING
             if (IsKeyPressed(KEY_W)) {
-                objects[selected].height += RESIZE_INTERVAL;
+                editor->objects[editor->selectedObject].height += RESIZE_INTERVAL;
             }
 
             if (IsKeyPressed(KEY_S)) {
-                if (objects[selected].height >= RESIZE_INTERVAL) {
-                    objects[selected].height -= RESIZE_INTERVAL;
+                if (editor->objects[editor->selectedObject].height >= RESIZE_INTERVAL) {
+                    editor->objects[editor->selectedObject].height -= RESIZE_INTERVAL;
                 }
             }
 
             if (IsKeyPressed(KEY_A)) {
-                if (objects[selected].width >= RESIZE_INTERVAL) {
-                    objects[selected].width -= RESIZE_INTERVAL;
+                if (editor->objects[editor->selectedObject].width >= RESIZE_INTERVAL) {
+                    editor->objects[editor->selectedObject].width -= RESIZE_INTERVAL;
                 }
             }
 
             if (IsKeyPressed(KEY_D)) {
-                objects[selected].width += RESIZE_INTERVAL;
+                editor->objects[editor->selectedObject].width += RESIZE_INTERVAL;
             }
 
             // DELETE
             if (IsKeyPressed(KEY_DELETE)) {
-                objects.erase(objects.begin()+selected);
-                if (objects.size() > 0) {
-                    selected = 0;
+                editor->objects.erase(editor->objects.begin() + editor->selectedObject);
+                if (editor->objects.size() > 0) {
+                    editor->selectedObject = 0;
                 } else {
-                    selected = -1;
+                    editor->selectedObject = -1;
                 }
             }
 
             // CHANGE TYPE
             if (IsKeyPressed(KEY_T)) {
-                if (objects[selected].type+1 >= objectTypes.size()) {
-                    objects[selected].type = 0;
+                if (editor->objects[editor->selectedObject].type+1 >= objectTypes.size()) {
+                    editor->objects[editor->selectedObject].type = 0;
                 } else {
-                    objects[selected].type += 1;
+                    editor->objects[editor->selectedObject].type += 1;
                 }
             }
         } else {
@@ -303,7 +303,7 @@ void control(EditorState *state) {
     }
 }
 
-void drawMenu() {
+void drawMenu(Editor *editor) {
     int xpos = WINDOW_WIDTH-FONT_SIZE*8;
 
     vector<const char*> entries = {
@@ -322,29 +322,29 @@ void drawMenu() {
     }
 
 
-    if (isElementSelected()) {
+    if (isElementSelected(editor)) {
         DrawText(
-            objectTypeToString(objects[selected].type).c_str(),
-            WINDOW_WIDTH-20-objectTypeToString(objects[selected].type).size()*FONT_SIZE*0.6,
+            objectTypeToString(editor->objects[editor->selectedObject].type).c_str(),
+            WINDOW_WIDTH-20-objectTypeToString(editor->objects[editor->selectedObject].type).size()*FONT_SIZE*0.6,
             WINDOW_HEIGHT-30,
             FONT_SIZE,
-            objectTypeColor(objects[selected].type) 
+            objectTypeColor(editor->objects[editor->selectedObject].type) 
         );
     }
 }
 
-void drawObjects(Camera2D *camera) {
-    for (unsigned int i = 0; i < objects.size(); i++) {
-        DrawRectangle(objects[i].x, objects[i].y, objects[i].width, objects[i].height, objectTypeColor(objects[i].type));
+void drawObjects(Camera2D *camera, Editor *editor) {
+    for (unsigned int i = 0; i < editor->objects.size(); i++) {
+        DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, editor->objects[i].height, objectTypeColor(editor->objects[i].type));
     }
 
-    if (isElementSelected()) {
+    if (isElementSelected(editor)) {
         DrawRectangleLinesEx(
             Rectangle {
-                (float)objects[selected].x,
-                (float)objects[selected].y,
-                (float)objects[selected].width,
-                (float)objects[selected].height,
+                (float) editor->objects[editor->selectedObject].x,
+                (float) editor->objects[editor->selectedObject].y,
+                (float) editor->objects[editor->selectedObject].width,
+                (float) editor->objects[editor->selectedObject].height,
             },
             6-camera->zoom*2,
             GREEN
@@ -352,11 +352,11 @@ void drawObjects(Camera2D *camera) {
     }
 }
 
-void drawWindows () {
+void drawWindows (Editor *editor) {
     int scale = FONT_SIZE/10;
     int yBase = 120+FONT_SIZE;
 
-    if (exitWindow) {
+    if (editor->state == EditorState::Closing) {
         DrawRectangle(100, 100, WINDOW_WIDTH-200, WINDOW_HEIGHT-200, RAYWHITE);
         DrawText("Please enter a level name", 120, yBase, FONT_SIZE, BLACK);
         DrawText(levelName.c_str(), 130, yBase+FONT_SIZE*2+FONT_SIZE/2, FONT_SIZE, BLACK);
@@ -397,11 +397,11 @@ int main(int argc, char **argv) {
 
     if (argc > 1) {
         filename = argv[1];
-        loadLevel();
+        loadLevel(&editor);
     }
 
     while (!closeEditor) {
-        control();
+        control(&editor);
 
         camera.zoom += cameraZoom;
         if (camera.zoom > 2.0f) {
@@ -418,10 +418,10 @@ int main(int argc, char **argv) {
         BeginDrawing();
             BeginMode2D(camera);
                 ClearBackground(DARKGRAY);
-                drawObjects(&camera);
+                drawObjects(&camera, &editor);
             EndMode2D();
-            drawMenu();
-            drawWindows();
+            drawMenu(&editor);
+            drawWindows(&editor);
         EndDrawing();
 
         camera.zoom = 0;
