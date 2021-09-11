@@ -19,7 +19,7 @@ Vector2 cameraTarget = {WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
 float cameraZoom = 1.0f;
 
 bool closeEditor = false;
-bool exitWindow = false;
+bool exitWindowOpen = false;
 int exitWindowSelectedOption = 0;
 
 string filename = "";
@@ -123,7 +123,7 @@ bool isElementSelected() {
 }
 
 bool isWindowOpen() {
-    if (exitWindow) {
+    if (exitWindowOpen) {
         return true;
     }
     return false;
@@ -135,12 +135,12 @@ void control() {
         if (isElementSelected()) {
             selected = -1;
         } else {
-            exitWindow = true;
+            exitWindowOpen = true;
         }
     }
 
     if (isWindowOpen()) {
-        if (exitWindow) {
+        if (exitWindowOpen) {
             if (IsKeyPressed(KEY_ENTER)) {
                 if (exitWindowSelectedOption == 0) {
                     if (levelName.size() > 0) {
@@ -151,19 +151,25 @@ void control() {
                 } else if(exitWindowSelectedOption == 1) {
                     closeEditor = true;
                 } else {
-                    exitWindow = false;
+                    exitWindowOpen = false;
                 }
             }
 
-            if (IsKeyPressed(KEY_TAB)) {
-                if (exitWindowSelectedOption == 0) {
-                    exitWindowSelectedOption = 1;
-                } else if (exitWindowSelectedOption == 1) {
-                    exitWindowSelectedOption = 2;
+            if (IsKeyPressed(KEY_TAB) || IsKeyPressed(KEY_RIGHT)) {
+                if (exitWindowSelectedOption < 2) {
+                    exitWindowSelectedOption += 1;
                 } else {
                     exitWindowSelectedOption = 0;
                 }
             } 
+
+            if (IsKeyPressed(KEY_LEFT)) {
+                if (exitWindowSelectedOption == 0) {
+                    exitWindowSelectedOption = 2;
+                } else {
+                    exitWindowSelectedOption -= 1;
+                }
+            }
 
             int key = GetCharPressed();
             while(key > 0) {
@@ -344,7 +350,7 @@ void drawWindows () {
     int scale = FONT_SIZE/10;
     int yBase = 120+FONT_SIZE;
 
-    if (exitWindow) {
+    if (exitWindowOpen) {
         DrawRectangle(100, 100, WINDOW_WIDTH-200, WINDOW_HEIGHT-200, RAYWHITE);
         DrawText("Please enter a level name", 120, yBase, FONT_SIZE, BLACK);
         DrawText(levelName.c_str(), 130, yBase+FONT_SIZE*2+FONT_SIZE/2, FONT_SIZE, BLACK);
