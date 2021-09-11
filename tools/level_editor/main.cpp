@@ -25,6 +25,13 @@ int exitWindowSelectedOption = 0;
 string filename = "";
 string levelName = "";
 
+enum ExportType {
+    LVL,
+    CPP
+};
+
+int selectedExportType = ExportType::LVL;
+
 enum ObjectType {
     Block,
     Spawn
@@ -51,6 +58,17 @@ string objectTypeToString(int type) {
             return "Spawn";
         default:
             return "Block";
+    }
+}
+
+string exportTypeToString(int type) {
+    switch(type) {
+        case ExportType::LVL:
+            return "LVL";
+        case ExportType::CPP:
+            return "C++ (not implemented)";
+        default:
+            return "LVL";
     }
 }
 
@@ -170,6 +188,24 @@ void control() {
                     exitWindowSelectedOption -= 1;
                 }
             }
+
+            if (IsKeyPressed(KEY_UP)) {
+                if (selectedExportType == 1) {
+                    selectedExportType = 0;
+                } else {
+                    selectedExportType += 1;
+                }
+            }
+
+            if (IsKeyPressed(KEY_DOWN)) {
+                if (selectedExportType == 0) {
+                    selectedExportType = 1;
+                } else {
+                    selectedExportType -= 1;
+                }
+            }
+
+
 
             int key = GetCharPressed();
             while(key > 0) {
@@ -356,19 +392,23 @@ void drawWindows () {
         DrawText(levelName.c_str(), 130, yBase+FONT_SIZE*2+FONT_SIZE/2, FONT_SIZE, BLACK);
         DrawRectangleLines(120, yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
 
-        DrawText("Save & Exit", 120+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
-        DrawText("Close without saving", 120+75*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
-        DrawText("Cancel", 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
+        DrawText("Export type", 120, yBase+FONT_SIZE*6, FONT_SIZE, BLACK);
+        DrawRectangleLines(120, yBase+FONT_SIZE*8, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
+        DrawText(exportTypeToString(selectedExportType).c_str(), 120+FONT_SIZE/2, yBase+FONT_SIZE*8+FONT_SIZE/2, FONT_SIZE, BLACK);
+
+        DrawText("Save & Exit", 120+FONT_SIZE/2, yBase+FONT_SIZE*12+FONT_SIZE/2, FONT_SIZE, BLACK);
+        DrawText("Close without saving", 120+75*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*12+FONT_SIZE/2, FONT_SIZE, BLACK);
+        DrawText("Cancel", 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*12+FONT_SIZE/2, FONT_SIZE, BLACK);
 
         switch(exitWindowSelectedOption) {
             case 0:
-                DrawRectangleLines(120, yBase+FONT_SIZE*5, 75*scale, FONT_SIZE*2, BLACK);
+                DrawRectangleLines(120, yBase+FONT_SIZE*12, 75*scale, FONT_SIZE*2, BLACK);
                 break;
             case 1:
-                DrawRectangleLines(120+75*scale+FONT_SIZE, yBase+FONT_SIZE*5, 120*scale, FONT_SIZE*2, BLACK);
+                DrawRectangleLines(120+75*scale+FONT_SIZE, yBase+FONT_SIZE*12, 120*scale, FONT_SIZE*2, BLACK);
                 break;
             case 2:
-                DrawRectangleLines(120+75*scale+FONT_SIZE+120*scale+FONT_SIZE, yBase+FONT_SIZE*5, 60*scale, FONT_SIZE*2, BLACK);
+                DrawRectangleLines(120+75*scale+FONT_SIZE+120*scale+FONT_SIZE, yBase+FONT_SIZE*12, 60*scale, FONT_SIZE*2, BLACK);
                 break;
         }
 
@@ -376,7 +416,7 @@ void drawWindows () {
 }
 
 int main(int argc, char **argv) {
-    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "RPG Project Level Editor");
+    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Game Level Editor");
     SetTargetFPS(60);
 
     Camera2D camera = {0};
