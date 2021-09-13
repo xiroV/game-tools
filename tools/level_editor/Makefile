@@ -1,7 +1,13 @@
-CC = g++
-LIBS = -lraylib -lpthread -lrt -lm -ldl
-CFLAGS = -Wall -std=c++17
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    CC = clang++
+    LIBS = -framework IOKit -framework Cocoa -framework OpenGL `pkg-config --libs --cflags raylib`
+else
+    CC = g++
+    LIBS = -lraylib -lpthread -lrt -lm -ldl
+endif
 
+CFLAGS = -std=c++17 -Wall -Wswitch
 
 all:	editor	
 
