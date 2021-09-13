@@ -34,10 +34,9 @@ vector<ObjectType> objectTypes = { ObjectType::Block, ObjectType::Spawn};
 enum class EditorState {
     Editing,
     Closing,
-    ShowKeyValue
+    ShowKeyValue,
+    EditKeyValue
 };
-
-
 
 struct ObjectData {
     string key;
@@ -54,6 +53,7 @@ struct Editor {
     EditorState state;
     vector<Object> objects; 
     int selectedObject;
+    int editKeyValueIndex;
 };
 
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
@@ -201,6 +201,20 @@ void control(Editor *editor) {
             if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_V)) {
                 editor->state = EditorState::Editing;
             }
+
+            if (IsKeyPressed(KEY_ENTER)) {
+                // editor->state = EditorState::EditKeyValue;
+                editor->state = EditorState::Editing;
+            }
+
+            if (IsKeyPressed(KEY_DOWN)) {
+                ++editor->editKeyValueIndex %= editor->objects[editor->selectedObject].data.size();
+            }
+
+            if (IsKeyPressed(KEY_UP)) {
+                --editor->editKeyValueIndex %= editor->objects[editor->selectedObject].data.size();
+            }
+
             break;
         }
         case EditorState::Editing: {
@@ -326,10 +340,17 @@ void drawKeyValueList(Editor *editor) {
     auto &element = editor->objects[editor->selectedObject];
 
     int offsetY = 10;
+    int currentIndex = 0;
     for (auto &entry : element.data) {
         DrawText(entry.key.c_str(), 15, offsetY, FONT_SIZE, WHITE);
         DrawText(entry.key.c_str(), 15 + WINDOW_WIDTH / 2, offsetY, FONT_SIZE, WHITE);
+
+        if (currentIndex == editor->editKeyValueIndex) {
+            DrawRectangleLines(10, offsetY, WINDOW_WIDTH - 30, FONT_SIZE, YELLOW);
+        }
+
         offsetY += FONT_SIZE + 4;
+        currentIndex++;
     }
 }
 
@@ -425,12 +446,12 @@ int main(int argc, char **argv) {
     editor.state = EditorState::Editing;
     editor.selectedObject = -1;
     // editor.state = EditorState::Editing;
-    // editor.selectedObject = 0;
-    // editor.objects.push_back({WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100});
-    // editor.objects[0].data.push_back({"foo", "bar"});
-    // editor.objects[0].data.push_back({"foo", "bar"});
-    // editor.objects[0].data.push_back({"foo", "bar"});
-    // editor.objects[0].data.push_back({"foo", "bar"});
+    editor.selectedObject = 0;
+    editor.objects.push_back({WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100});
+    editor.objects[0].data.push_back({"foo", "bar"});
+    editor.objects[0].data.push_back({"foo", "bar"});
+    editor.objects[0].data.push_back({"foo", "bar"});
+    editor.objects[0].data.push_back({"foo", "bar"});
 
     if (argc > 1) {
         filename = argv[1];
