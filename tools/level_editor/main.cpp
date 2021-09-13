@@ -49,11 +49,17 @@ struct Object {
     vector<ObjectData> data;
 };
 
+enum class KeyOrValue {
+    Key,
+    Value
+};
+
 struct Editor {
     EditorState state;
     vector<Object> objects; 
     int selectedObject;
     int editKeyValueIndex;
+    KeyOrValue keyOrValue;
 };
 
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
@@ -144,6 +150,23 @@ bool isExitWindowOpen(EditorState state) {
     return false;
 }
 
+void updateStringByCharInput(string &str, const int maxLength) {
+    int key = GetCharPressed();
+    while (key > 0) {
+        if (str.size() < maxLength) {
+            str.push_back((char) key);
+        }
+
+        key = GetCharPressed();
+    }
+
+    if (IsKeyPressed(KEY_BACKSPACE)) {
+        if (str.size() > 0) {
+            str.pop_back();
+        }
+    }
+}
+
 void control(Editor *editor) {
     // EXIT WINDOW
     if (WindowShouldClose()) {
@@ -181,30 +204,39 @@ void control(Editor *editor) {
                 }
             } 
 
-            int key = GetCharPressed();
-            while(key > 0) {
-                if (levelName.size() < 60) {
-                    levelName.push_back((char)key);
-                }
-
-                key = GetCharPressed();
-            }
-
-            if (IsKeyPressed(KEY_BACKSPACE)) {
-                if (levelName.size() > 0) {
-                    levelName.pop_back();
-                }
-            }
+            updateStringByCharInput(levelName, 60);
             break;
         } 
+        case EditorState::EditKeyValue: {
+            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) {
+                editor->state = EditorState::ShowKeyValue;
+            }
+
+            if (
+                IsKeyPressed(KEY_TAB) ||
+                (editor->keyOrValue == KeyOrValue::Key && IsKeyPressed(KEY_RIGHT)) ||
+                (editor->keyOrValue == KeyOrValue::Value && IsKeyPressed(KEY_LEFT))
+            ) {
+                if (editor->keyOrValue == KeyOrValue::Key) {
+                    editor->keyOrValue = KeyOrValue::Value;
+                } else {
+                    editor->keyOrValue = KeyOrValue::Key;
+                }
+            } 
+
+            // Ah, geez
+            ObjectData &current = editor->objects[editor->selectedObject].data[editor->editKeyValueIndex];
+            string &data = editor->keyOrValue == KeyOrValue::Key ? current.key : current.value; 
+            // Ah, geez end
+            updateStringByCharInput(data, 30);
+        }
         case EditorState::ShowKeyValue: {
             if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_V)) {
                 editor->state = EditorState::Editing;
             }
 
             if (IsKeyPressed(KEY_ENTER)) {
-                // editor->state = EditorState::EditKeyValue;
-                editor->state = EditorState::Editing;
+                editor->state = EditorState::EditKeyValue;
             }
 
             if (IsKeyPressed(KEY_DOWN)) {
@@ -213,6 +245,10 @@ void control(Editor *editor) {
 
             if (IsKeyPressed(KEY_UP)) {
                 --editor->editKeyValueIndex %= editor->objects[editor->selectedObject].data.size();
+            }
+
+            if (IsKeyPressed(KEY_N)) {
+                editor->objects[editor->selectedObject].data.push_back({"key", "value"});
             }
 
             break;
@@ -307,6 +343,7 @@ void control(Editor *editor) {
 
                 // OPEN KEY VALUE WINDOW
                 if (IsKeyPressed(KEY_V)) {
+                    editor->editKeyValueIndex = -1;
                     editor->state = EditorState::ShowKeyValue;
                 }
 
@@ -335,18 +372,31 @@ void control(Editor *editor) {
 }
 
 void drawKeyValueList(Editor *editor) {
-    if (editor->selectedObject == -1 || editor->state != EditorState::ShowKeyValue) return;
+    if (editor->selectedObject == -1 || (editor->state != EditorState::ShowKeyValue && editor->state != EditorState::EditKeyValue)) return;
     DrawRectangle(5, 5, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, GRAY);
-    auto &element = editor->objects[editor->selectedObject];
+    Object &element = editor->objects[editor->selectedObject];
 
     int offsetY = 10;
     int currentIndex = 0;
     for (auto &entry : element.data) {
         DrawText(entry.key.c_str(), 15, offsetY, FONT_SIZE, WHITE);
-        DrawText(entry.key.c_str(), 15 + WINDOW_WIDTH / 2, offsetY, FONT_SIZE, WHITE);
+        DrawText(entry.value.c_str(), 15 + WINDOW_WIDTH / 2, offsetY, FONT_SIZE, WHITE);
 
         if (currentIndex == editor->editKeyValueIndex) {
-            DrawRectangleLines(10, offsetY, WINDOW_WIDTH - 30, FONT_SIZE, YELLOW);
+            if (editor->state == EditorState::EditKeyValue) {
+                switch (editor->keyOrValue) {
+                    case KeyOrValue::Key: {
+                        DrawRectangleLines(10, offsetY, (WINDOW_WIDTH - 30) / 2, FONT_SIZE, YELLOW);
+                        break;
+                    }
+                    case KeyOrValue::Value: {
+                        DrawRectangleLines(10 + WINDOW_WIDTH / 2, offsetY, (WINDOW_WIDTH - 30) / 2, FONT_SIZE, YELLOW);
+                        break;
+                    }
+                }
+            } else {
+                DrawRectangleLines(10, offsetY, WINDOW_WIDTH - 30, FONT_SIZE, YELLOW);
+            }
         }
 
         offsetY += FONT_SIZE + 4;
@@ -445,7 +495,7 @@ int main(int argc, char **argv) {
     Editor editor = {};
     editor.state = EditorState::Editing;
     editor.selectedObject = -1;
-    // editor.state = EditorState::Editing;
+    editor.keyOrValue = KeyOrValue::Key;
     editor.selectedObject = 0;
     editor.objects.push_back({WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100});
     editor.objects[0].data.push_back({"foo", "bar"});
