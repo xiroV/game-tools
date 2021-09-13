@@ -7,7 +7,7 @@ else
     LIBS = -lraylib -lpthread -lrt -lm -ldl
 endif
 
-CFLAGS = -std=c++17 -Wall -Wswitch
+CFLAGS = -std=c++17 -Wall -Wswitch -Wunused-variable -Wmissing-braces
 
 all:	editor	
 
