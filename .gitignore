@@ -34,3 +34,5 @@
 lib/
 bin/
 .nvimrc
+
+level_editor/editor
