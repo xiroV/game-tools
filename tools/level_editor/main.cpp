@@ -29,6 +29,12 @@ enum ObjectType {
     Spawn
 };
 
+enum ExportType {
+    LVL,
+    CPP
+};
+int selectedExportType = ExportType::LVL;
+
 vector<ObjectType> objectTypes = { ObjectType::Block, ObjectType::Spawn};
 
 enum class EditorState {
@@ -65,7 +71,7 @@ struct Editor {
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
 
 string objectTypeToString(int type) {
-    swinntch(type) {
+    switch(type) {
         case ObjectType::Block:
             return "Block";
         case ObjectType::Spawn:
@@ -102,6 +108,17 @@ void saveLevel(Editor *editor) {
     }
 
     levelFile.close();
+}
+
+string exportTypeToString(int type) {
+    switch (type) {
+        case ExportType::LVL:
+            return "LVL";
+        case ExportType::CPP:
+            return "C++ (not implemented)";
+        default:
+            return "LVL";
+    }
 }
 
 void loadLevel(Editor *editor) {
@@ -194,11 +211,9 @@ void control(Editor *editor) {
                 }
             }
 
-            if (IsKeyPressed(KEY_TAB)) {
-                if (exitWindowSelectedOption == 0) {
-                    exitWindowSelectedOption = 1;
-                } else if (exitWindowSelectedOption == 1) {
-                    exitWindowSelectedOption = 2;
+            if (IsKeyPressed(KEY_TAB) || IsKeyPressed(KEY_RIGHT)) {
+                if (exitWindowSelectedOption < 2) { // MOD?
+                    exitWindowSelectedOption += 1;
                 } else {
                     exitWindowSelectedOption = 0;
                 }
@@ -490,6 +505,9 @@ void drawWindows(Editor *editor) {
 int main(int argc, char **argv) {
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Level Editor");
     SetTargetFPS(60);
+
+    // So ESCAPE isn't eaten by ShouldWindowClose();
+    SetExitKey(KEY_F10);
 
     Camera2D camera = {0};
     camera.target = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
