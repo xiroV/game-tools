@@ -1,10 +1,10 @@
-#include<iostream>
-#include<string>
-#include<sstream>
-#include<typeinfo>
-#include<vector>
-#include<fstream>
-#include<raylib.h>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <typeinfo>
+#include <vector>
+#include <fstream>
+#include <raylib.h>
 
 using namespace std;
 
@@ -168,8 +168,8 @@ void updateStringByCharInput(string &str, const int maxLength) {
 }
 
 void control(Editor *editor) {
-    // EXIT WINDOW
-    if (WindowShouldClose()) {
+
+    if (IsKeyDown(KEY_LEFT_ALT) && IsKeyDown(KEY_F4)) {
         if (isElementSelected(editor)) {
             editor->selectedObject = -1;
         } else {
@@ -208,27 +208,29 @@ void control(Editor *editor) {
             break;
         } 
         case EditorState::EditKeyValue: {
-            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) {
-                editor->state = EditorState::ShowKeyValue;
+            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) {\
+                cout << "Setting to ShowKeyValue" << endl;
+                editor->state = EditorState::ShowKeyValue;     
+            } else {
+                if (
+                    IsKeyPressed(KEY_TAB) ||
+                    (editor->keyOrValue == KeyOrValue::Key && IsKeyPressed(KEY_RIGHT)) ||
+                    (editor->keyOrValue == KeyOrValue::Value && IsKeyPressed(KEY_LEFT))
+                ) {
+                    if (editor->keyOrValue == KeyOrValue::Key) {
+                        editor->keyOrValue = KeyOrValue::Value;
+                    } else {
+                        editor->keyOrValue = KeyOrValue::Key;
+                    }
+                } 
+
+                // Ah, geez
+                ObjectData &current = editor->objects[editor->selectedObject].data[editor->editKeyValueIndex];
+                string &data = editor->keyOrValue == KeyOrValue::Key ? current.key : current.value; 
+                // Ah, geez end
+                updateStringByCharInput(data, 30);
             }
-
-            if (
-                IsKeyPressed(KEY_TAB) ||
-                (editor->keyOrValue == KeyOrValue::Key && IsKeyPressed(KEY_RIGHT)) ||
-                (editor->keyOrValue == KeyOrValue::Value && IsKeyPressed(KEY_LEFT))
-            ) {
-                if (editor->keyOrValue == KeyOrValue::Key) {
-                    editor->keyOrValue = KeyOrValue::Value;
-                } else {
-                    editor->keyOrValue = KeyOrValue::Key;
-                }
-            } 
-
-            // Ah, geez
-            ObjectData &current = editor->objects[editor->selectedObject].data[editor->editKeyValueIndex];
-            string &data = editor->keyOrValue == KeyOrValue::Key ? current.key : current.value; 
-            // Ah, geez end
-            updateStringByCharInput(data, 30);
+            break;
         }
         case EditorState::ShowKeyValue: {
             if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_V)) {
@@ -236,7 +238,10 @@ void control(Editor *editor) {
             }
 
             if (IsKeyPressed(KEY_ENTER)) {
-                editor->state = EditorState::EditKeyValue;
+                if (editor->objects[editor->selectedObject].data.size() > 0) {
+                    cout << "EditKeyValue" << endl;
+                    editor->state = EditorState::EditKeyValue;
+                }
             }
 
             if (IsKeyPressed(KEY_DOWN)) {
@@ -343,7 +348,6 @@ void control(Editor *editor) {
 
                 // OPEN KEY VALUE WINDOW
                 if (IsKeyPressed(KEY_V)) {
-                    editor->editKeyValueIndex = -1;
                     editor->state = EditorState::ShowKeyValue;
                 }
 
@@ -374,9 +378,10 @@ void control(Editor *editor) {
 void drawKeyValueList(Editor *editor) {
     if (editor->selectedObject == -1 || (editor->state != EditorState::ShowKeyValue && editor->state != EditorState::EditKeyValue)) return;
     DrawRectangle(5, 5, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, GRAY);
+    DrawText("[n] for new Key Value Pair", WINDOW_WIDTH - 280, 10, FONT_SIZE, WHITE);
     Object &element = editor->objects[editor->selectedObject];
 
-    int offsetY = 10;
+    int offsetY = 40;
     int currentIndex = 0;
     for (auto &entry : element.data) {
         DrawText(entry.key.c_str(), 15, offsetY, FONT_SIZE, WHITE);
@@ -426,8 +431,8 @@ void drawMenu(Editor *editor) {
     if (isElementSelected(editor)) {
         DrawText(
             objectTypeToString(editor->objects[editor->selectedObject].type).c_str(),
-            WINDOW_WIDTH-20-objectTypeToString(editor->objects[editor->selectedObject].type).size()*FONT_SIZE*0.6,
-            WINDOW_HEIGHT-30,
+            WINDOW_WIDTH - 20 - objectTypeToString(editor->objects[editor->selectedObject].type).size() * FONT_SIZE * 0.6,
+            WINDOW_HEIGHT - 30,
             FONT_SIZE,
             objectTypeColor(editor->objects[editor->selectedObject].type) 
         );
@@ -472,10 +477,10 @@ void drawWindows(Editor *editor) {
                 DrawRectangleLines(120, yBase+FONT_SIZE*5, 75*scale, FONT_SIZE*2, BLACK);
                 break;
             case 1:
-                DrawRectangleLines(120+75*scale+FONT_SIZE, yBase+FONT_SIZE*5, 120*scale, FONT_SIZE*2, BLACK);
+                DrawRectangleLines(120 + 75 * scale + FONT_SIZE, yBase+FONT_SIZE*5, 120*scale, FONT_SIZE*2, BLACK);
                 break;
             case 2:
-                DrawRectangleLines(120+75*scale+FONT_SIZE+120*scale+FONT_SIZE, yBase+FONT_SIZE*5, 60*scale, FONT_SIZE*2, BLACK);
+                DrawRectangleLines(120 + 75 * scale + FONT_SIZE + 120 * scale + FONT_SIZE, yBase + FONT_SIZE * 5, 60 * scale, FONT_SIZE * 2, BLACK);
                 break;
         }
 
@@ -494,14 +499,9 @@ int main(int argc, char **argv) {
 
     Editor editor = {};
     editor.state = EditorState::Editing;
-    editor.selectedObject = -1;
     editor.keyOrValue = KeyOrValue::Key;
-    editor.selectedObject = 0;
-    editor.objects.push_back({WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100});
-    editor.objects[0].data.push_back({"foo", "bar"});
-    editor.objects[0].data.push_back({"foo", "bar"});
-    editor.objects[0].data.push_back({"foo", "bar"});
-    editor.objects[0].data.push_back({"foo", "bar"});
+    editor.selectedObject = -1;
+    editor.editKeyValueIndex = 0;
 
     if (argc > 1) {
         filename = argv[1];
