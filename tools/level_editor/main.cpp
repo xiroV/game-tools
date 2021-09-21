@@ -66,6 +66,8 @@ struct Editor {
     int selectedObject;
     int editKeyValueIndex;
     KeyOrValue keyOrValue;
+    char outputDelimiter;
+    string version;
 };
 
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
@@ -96,12 +98,21 @@ void saveLevel(Editor *editor) {
     ofstream levelFile;
     levelFile.open(filename, ios::out);
 
-    if(levelFile.is_open()) {
+    if (levelFile.is_open()) {
         cout << "Saving " << editor->objects.size() << " objects" << endl;
 
+        levelFile << "#Version " << editor->version << endl;
         for (unsigned int i = 0; i < editor->objects.size(); i++) {
-            levelFile << editor->objects[i].x << " " << editor->objects[i].y <<
-                " " << editor->objects[i].width << " " << editor->objects[i].height << " " << editor->objects[i].type << endl;
+            levelFile << editor->objects[i].x << editor->outputDelimiter << editor->objects[i].y <<
+                editor->outputDelimiter << editor->objects[i].width << editor->outputDelimiter << editor->objects[i].height << editor->outputDelimiter << editor->objects[i].type << editor->outputDelimiter;
+                for (auto &pair : editor->objects[i].data) {
+                    // Should also handle multiple empty spaces as invalid.
+                    if (pair.key.length() != 0) {
+                        levelFile << pair.key << "=" << pair.value << editor->outputDelimiter;
+                    }
+                }
+
+                levelFile << endl;
         }
     } else {
         cout << "Unable to open file " << filename << endl;
@@ -135,12 +146,13 @@ void loadLevel(Editor *editor) {
             vector<int> lineElements;
             istringstream line(fileLine);
 
-            while (getline(line, element, ' ')) {
+            while (getline(line, element, editor->outputDelimiter)) {
                 lineElements.push_back(stoi(element));
             }
 
             Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4]};
             editor->objects.push_back(obj);
+            // TODO Handle key values
         }
     } else {
         cout << "Unable to open file" << endl; 
@@ -516,6 +528,8 @@ int main(int argc, char **argv) {
     camera.zoom = 1.0f;
 
     Editor editor = {};
+    editor.version = "0.0.1";
+    editor.outputDelimiter = ';';
     editor.state = EditorState::Editing;
     editor.keyOrValue = KeyOrValue::Key;
     editor.selectedObject = -1;
