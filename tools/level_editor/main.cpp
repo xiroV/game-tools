@@ -141,18 +141,32 @@ void loadLevel(Editor *editor) {
 
     if (levelFile.is_open()) {
         while (getline(levelFile, fileLine)) {
+            // TODO(jonas): Handle version number.
+            if (fileLine[0] == '#') continue;
             size_t pos = 0;
             string element;
             vector<int> lineElements;
             istringstream line(fileLine);
 
-            while (getline(line, element, editor->outputDelimiter)) {
+            int objectFieldCount = 0;
+            while (getline(line, element, editor->outputDelimiter) && objectFieldCount < 4) {
+                std::cout << element << std::endl;
                 lineElements.push_back(stoi(element));
+                objectFieldCount++;
             }
 
             Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4]};
+            
+            while (getline(line, element, editor->outputDelimiter)) {
+                istringstream keyValuePair = istringstream(element);
+                string key;
+                string value;
+                getline(keyValuePair, key, '=');
+                getline(keyValuePair, value, editor->outputDelimiter);
+                obj.data.push_back({key, value});
+            }
+
             editor->objects.push_back(obj);
-            // TODO Handle key values
         }
     } else {
         cout << "Unable to open file" << endl; 
@@ -266,7 +280,6 @@ void control(Editor *editor) {
 
             if (IsKeyPressed(KEY_ENTER)) {
                 if (editor->objects[editor->selectedObject].data.size() > 0) {
-                    cout << "EditKeyValue" << endl;
                     editor->state = EditorState::EditKeyValue;
                 }
             }
