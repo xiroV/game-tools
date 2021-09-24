@@ -99,8 +99,6 @@ void saveLevel(Editor *editor) {
     levelFile.open(filename, ios::out);
 
     if (levelFile.is_open()) {
-        cout << "Saving " << editor->objects.size() << " objects" << endl;
-
         levelFile << "#Version " << editor->version << endl;
         for (unsigned int i = 0; i < editor->objects.size(); i++) {
             levelFile << editor->objects[i].x << editor->outputDelimiter << editor->objects[i].y <<
@@ -193,7 +191,7 @@ bool isExitWindowOpen(EditorState state) {
 void updateStringByCharInput(string &str, const int maxLength) {
     int key = GetCharPressed();
     while (key > 0) {
-        if (str.size() < maxLength) {
+        if (str.size() < maxLength && key != ';' && key != '=') {
             str.push_back((char) key);
         }
 
@@ -249,8 +247,7 @@ void control(Editor *editor) {
             break;
         } 
         case EditorState::EditKeyValue: {
-            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) {\
-                cout << "Setting to ShowKeyValue" << endl;
+            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) {
                 editor->state = EditorState::ShowKeyValue;     
             } else {
                 if (
