@@ -24,17 +24,16 @@ int exitWindowSelectedOption = 0;
 string filename = "";
 string levelName = "";
 
-enum ExportType {
-    LVL,
-    CPP
-};
-
-int selectedExportType = ExportType::LVL;
-
 enum ObjectType {
     Block,
     Spawn
 };
+
+enum ExportType {
+    LVL,
+    CPP
+};
+int selectedExportType = ExportType::LVL;
 
 vector<ObjectType> objectTypes = { ObjectType::Block, ObjectType::Spawn};
 
@@ -67,6 +66,8 @@ struct Editor {
     int selectedObject;
     int editKeyValueIndex;
     KeyOrValue keyOrValue;
+    char outputDelimiter;
+    string version;
 };
 
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
@@ -79,17 +80,6 @@ string objectTypeToString(int type) {
             return "Spawn";
         default:
             return "Block";
-    }
-}
-
-string exportTypeToString(int type) {
-    switch(type) {
-        case ExportType::LVL:
-            return "LVL";
-        case ExportType::CPP:
-            return "C++ (not implemented)";
-        default:
-            return "LVL";
     }
 }
 
@@ -108,12 +98,21 @@ void saveLevel(Editor *editor) {
     ofstream levelFile;
     levelFile.open(filename, ios::out);
 
-    if(levelFile.is_open()) {
+    if (levelFile.is_open()) {
         cout << "Saving " << editor->objects.size() << " objects" << endl;
 
+        levelFile << "#Version " << editor->version << endl;
         for (unsigned int i = 0; i < editor->objects.size(); i++) {
-            levelFile << editor->objects[i].x << " " << editor->objects[i].y <<
-                " " << editor->objects[i].width << " " << editor->objects[i].height << " " << editor->objects[i].type << endl;
+            levelFile << editor->objects[i].x << editor->outputDelimiter << editor->objects[i].y <<
+                editor->outputDelimiter << editor->objects[i].width << editor->outputDelimiter << editor->objects[i].height << editor->outputDelimiter << editor->objects[i].type << editor->outputDelimiter;
+                for (auto &pair : editor->objects[i].data) {
+                    // Should also handle multiple empty spaces as invalid.
+                    if (pair.key.length() != 0) {
+                        levelFile << pair.key << "=" << pair.value << editor->outputDelimiter;
+                    }
+                }
+
+                levelFile << endl;
         }
     } else {
         cout << "Unable to open file " << filename << endl;
@@ -122,25 +121,48 @@ void saveLevel(Editor *editor) {
     levelFile.close();
 }
 
-void loadLevel(Editor *editor) {
-    cout << "Loading level file: " << filename << endl;
+string exportTypeToString(int type) {
+    switch (type) {
+        case ExportType::LVL:
+            return "LVL";
+        case ExportType::CPP:
+            return "C++ (not implemented)";
+        default:
+            return "LVL";
+    }
+}
 
+void loadLevel(Editor *editor) {
     string fileLine;
     ifstream levelFile;
     levelFile.open(filename);
 
     if (levelFile.is_open()) {
         while (getline(levelFile, fileLine)) {
+            // TODO(jonas): Handle version number.
+            if (fileLine[0] == '#') continue;
             size_t pos = 0;
             string element;
             vector<int> lineElements;
             istringstream line(fileLine);
 
-            while (getline(line, element, ' ')) {
+            int objectFieldCount = 0;
+            while (getline(line, element, editor->outputDelimiter) && objectFieldCount < 4) {
                 lineElements.push_back(stoi(element));
+                objectFieldCount++;
             }
 
-            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4]};
+            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4]}  ;
+            
+            while (getline(line, element, editor->outputDelimiter)) {
+                istringstream keyValuePair = istringstream(element);
+                string key;
+                string value;
+                getline(keyValuePair, key, '=');
+                getline(keyValuePair, value, editor->outputDelimiter);
+                obj.data.push_back({key, value});
+            }
+
             editor->objects.push_back(obj);
         }
     } else {
@@ -213,7 +235,7 @@ void control(Editor *editor) {
             }
 
             if (IsKeyPressed(KEY_TAB) || IsKeyPressed(KEY_RIGHT)) {
-                if (exitWindowSelectedOption < 2) {
+                if (exitWindowSelectedOption < 2) { // MOD?
                     exitWindowSelectedOption += 1;
                 } else {
                     exitWindowSelectedOption = 0;
@@ -255,7 +277,6 @@ void control(Editor *editor) {
 
             if (IsKeyPressed(KEY_ENTER)) {
                 if (editor->objects[editor->selectedObject].data.size() > 0) {
-                    cout << "EditKeyValue" << endl;
                     editor->state = EditorState::EditKeyValue;
                 }
             }
@@ -484,17 +505,13 @@ void drawWindows(Editor *editor) {
         DrawText(levelName.c_str(), 130, yBase+FONT_SIZE*2+FONT_SIZE/2, FONT_SIZE, BLACK);
         DrawRectangleLines(120, yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
 
-        DrawText("Export type", 120, yBase+FONT_SIZE*6, FONT_SIZE, BLACK);
-        DrawRectangleLines(120, yBase+FONT_SIZE*8, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
-        DrawText(exportTypeToString(selectedExportType).c_str(), 120+FONT_SIZE/2, yBase+FONT_SIZE*8+FONT_SIZE/2, FONT_SIZE, BLACK);
-
-        DrawText("Save & Exit", 120+FONT_SIZE/2, yBase+FONT_SIZE*12+FONT_SIZE/2, FONT_SIZE, BLACK);
-        DrawText("Close without saving", 120+75*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*12+FONT_SIZE/2, FONT_SIZE, BLACK);
-        DrawText("Cancel", 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*12+FONT_SIZE/2, FONT_SIZE, BLACK);
+        DrawText("Save & Exit", 120+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
+        DrawText("Close without saving", 120+75*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
+        DrawText("Cancel", 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
 
         switch(exitWindowSelectedOption) {
             case 0:
-                DrawRectangleLines(120, yBase+FONT_SIZE*12, 75*scale, FONT_SIZE*2, BLACK);
+                DrawRectangleLines(120, yBase+FONT_SIZE*5, 75*scale, FONT_SIZE*2, BLACK);
                 break;
             case 1:
                 DrawRectangleLines(120 + 75 * scale + FONT_SIZE, yBase+FONT_SIZE*5, 120*scale, FONT_SIZE*2, BLACK);
@@ -508,8 +525,11 @@ void drawWindows(Editor *editor) {
 }
 
 int main(int argc, char **argv) {
-    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Game Level Editor");
+    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Level Editor");
     SetTargetFPS(60);
+
+    // So ESCAPE isn't eaten by ShouldWindowClose();
+    SetExitKey(KEY_F10);
 
     Camera2D camera = {0};
     camera.target = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
@@ -518,6 +538,8 @@ int main(int argc, char **argv) {
     camera.zoom = 1.0f;
 
     Editor editor = {};
+    editor.version = "0.0.1";
+    editor.outputDelimiter = ';';
     editor.state = EditorState::Editing;
     editor.keyOrValue = KeyOrValue::Key;
     editor.selectedObject = -1;
