@@ -217,6 +217,9 @@ void control(Editor *editor) {
         }
     }
 
+    if (WindowShouldClose()) {
+        editor->state = EditorState::Closing;
+    }
     
     switch (editor->state) {
         case EditorState::Closing: {
