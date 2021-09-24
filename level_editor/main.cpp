@@ -165,7 +165,6 @@ void loadLevel(Editor *editor) {
         }
     } else {
         cout << "Unable to open file" << endl; 
-
     }
 
     levelFile.close();
@@ -221,6 +220,10 @@ void control(Editor *editor) {
     
     switch (editor->state) {
         case EditorState::Closing: {
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                editor->state = EditorState::Editing;
+            }
+
             if (IsKeyPressed(KEY_ENTER)) {
                 if (exitWindowSelectedOption == 0) {
                     if (levelName.size() > 0) {
@@ -296,6 +299,10 @@ void control(Editor *editor) {
             break;
         }
         case EditorState::Editing: {
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                editor->state = EditorState::Closing;
+            }
+
             if (IsKeyPressed(KEY_PAGE_UP)) {
                 cameraZoom += 0.5;
             }
