@@ -99,7 +99,8 @@ void saveLevel(Editor *editor) {
     levelFile.open(filename, ios::out);
 
     if (levelFile.is_open()) {
-        levelFile << "#Version " << editor->version << endl;
+        levelFile << "#version " << editor->version << endl;
+        levelFile << editor->outputDelimiter << endl;
         for (unsigned int i = 0; i < editor->objects.size(); i++) {
             levelFile << editor->objects[i].x << editor->outputDelimiter << editor->objects[i].y <<
                 editor->outputDelimiter << editor->objects[i].width << editor->outputDelimiter << editor->objects[i].height << editor->outputDelimiter << editor->objects[i].type << editor->outputDelimiter;
@@ -131,33 +132,46 @@ string exportTypeToString(int type) {
 }
 
 void loadLevel(Editor *editor) {
+    int version;
+
     string fileLine;
     ifstream levelFile;
     levelFile.open(filename);
 
+    char delimiter = ';';
+
     if (levelFile.is_open()) {
-        while (getline(levelFile, fileLine)) {
-            // TODO(jonas): Handle version number.
-            if (fileLine[0] == '#') continue;
+        
+        // Read version
+        getline(levelFile, fileLine);
+        if (fileLine[0] == '#') {
+            version = stoi(fileLine.substr(string("#version ").length(), fileLine.length()));
+        };
+        // Get delimiter
+        getline(levelFile, fileLine);
+        delimiter = fileLine[0];
+
+        // Only one version currently, so nothing special to do
+        while (getline(levelFile, fileLine)) {            
             size_t pos = 0;
             string element;
             vector<int> lineElements;
             istringstream line(fileLine);
 
             int objectFieldCount = 0;
-            while (getline(line, element, editor->outputDelimiter) && objectFieldCount < 4) {
+            while (getline(line, element, delimiter) && objectFieldCount < 4) {
                 lineElements.push_back(stoi(element));
                 objectFieldCount++;
             }
 
             Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4]}  ;
             
-            while (getline(line, element, editor->outputDelimiter)) {
+            while (getline(line, element, delimiter)) {
                 istringstream keyValuePair = istringstream(element);
                 string key;
                 string value;
                 getline(keyValuePair, key, '=');
-                getline(keyValuePair, value, editor->outputDelimiter);
+                getline(keyValuePair, value, delimiter);
                 obj.data.push_back({key, value});
             }
 
