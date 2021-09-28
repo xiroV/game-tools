@@ -151,7 +151,6 @@ void loadLevel(Editor *editor) {
 
         // Only one version currently, so nothing special to do
         while (getline(levelFile, fileLine)) {            
-            size_t pos = 0;
             string element;
             vector<int> lineElements;
             istringstream line(fileLine);
@@ -505,20 +504,59 @@ void drawMenu(Editor *editor) {
 
 void drawObjects(Camera2D *camera, Editor *editor) {
     for (unsigned int i = 0; i < editor->objects.size(); i++) {
-        DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, editor->objects[i].height, objectTypeColor(editor->objects[i].type));
+        if (editor->objects[i].width == 0 && editor->objects[i].height == 0) {
+            DrawCircle(editor->objects[i].x, editor->objects[i].y, 5, objectTypeColor(editor->objects[i].type));
+        } else if (editor->objects[i].width == 0) {
+            DrawRectangle(editor->objects[i].x, editor->objects[i].y, 1, editor->objects[i].height, objectTypeColor(editor->objects[i].type));
+        } else if (editor->objects[i].height == 0) {
+            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, 1, objectTypeColor(editor->objects[i].type));
+        } else {
+            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, editor->objects[i].height, objectTypeColor(editor->objects[i].type));
+        }
     }
 
     if (isElementSelected(editor)) {
-        DrawRectangleLinesEx(
-            Rectangle {
-                (float) editor->objects[editor->selectedObject].x,
-                (float) editor->objects[editor->selectedObject].y,
-                (float) editor->objects[editor->selectedObject].width,
-                (float) editor->objects[editor->selectedObject].height,
-            },
-            6-camera->zoom*2,
-            GREEN
-        );
+        if (editor->objects[editor->selectedObject].width == 0 && editor->objects[editor->selectedObject].height == 0) {
+            DrawCircleLines(
+                editor->objects[editor->selectedObject].x,
+                editor->objects[editor->selectedObject].y,
+                5,
+                GREEN
+            );
+        } else if (editor->objects[editor->selectedObject].width == 0) {
+            DrawRectangleLinesEx(
+                Rectangle {
+                    (float) editor->objects[editor->selectedObject].x,
+                    (float) editor->objects[editor->selectedObject].y,
+                    (float) 2.0,
+                    (float) editor->objects[editor->selectedObject].height,
+                },
+                6-camera->zoom*2,
+                GREEN
+            );
+        } else if (editor->objects[editor->selectedObject].height == 0) {
+            DrawRectangleLinesEx(
+                Rectangle {
+                    (float) editor->objects[editor->selectedObject].x,
+                    (float) editor->objects[editor->selectedObject].y,
+                    (float) editor->objects[editor->selectedObject].width,
+                    (float) 2.0,
+                },
+                6-camera->zoom*2,
+                GREEN
+            );
+        } else {
+            DrawRectangleLinesEx(
+                Rectangle {
+                    (float) editor->objects[editor->selectedObject].x,
+                    (float) editor->objects[editor->selectedObject].y,
+                    (float) editor->objects[editor->selectedObject].width,
+                    (float) editor->objects[editor->selectedObject].height,
+                },
+                6-camera->zoom*2,
+                GREEN
+            );
+        }
     }
 }
 
