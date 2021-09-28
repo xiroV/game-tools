@@ -36,3 +36,4 @@ bin/
 .nvimrc
 
 level_editor/editor
+.vscode/
