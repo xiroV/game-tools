@@ -21,6 +21,9 @@ float cameraZoom = 1.0f;
 bool closeEditor = false;
 int exitWindowSelectedOption = 0;
 
+char illegalPathCharacters[] = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|'};
+string illegalFileNames[] = {};
+
 string filename = "";
 string levelName = "";
 
