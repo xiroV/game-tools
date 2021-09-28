@@ -131,7 +131,7 @@ string exportTypeToString(int type) {
 }
 
 void loadLevel(Editor *editor) {
-    int version;
+    int version = 0;
 
     string fileLine;
     ifstream levelFile;
@@ -144,6 +144,10 @@ void loadLevel(Editor *editor) {
         if (fileLine[0] == '#') {
             version = stoi(fileLine.substr(string("#version ").length(), fileLine.length()));
         };
+
+        if (version > editor->version) {
+            cout << endl << "Version of file read is newer than this binary supports. Will try its best to parse the input file." << endl << endl;
+        }
 
         // Only one version currently, so nothing special to do
         while (getline(levelFile, fileLine)) {            
