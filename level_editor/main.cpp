@@ -67,7 +67,7 @@ struct Editor {
     int editKeyValueIndex;
     KeyOrValue keyOrValue;
     char outputDelimiter;
-    string version;
+    int version;
 };
 
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
@@ -100,7 +100,6 @@ void saveLevel(Editor *editor) {
 
     if (levelFile.is_open()) {
         levelFile << "#version " << editor->version << endl;
-        levelFile << editor->outputDelimiter << endl;
         for (unsigned int i = 0; i < editor->objects.size(); i++) {
             levelFile << editor->objects[i].x << editor->outputDelimiter << editor->objects[i].y <<
                 editor->outputDelimiter << editor->objects[i].width << editor->outputDelimiter << editor->objects[i].height << editor->outputDelimiter << editor->objects[i].type << editor->outputDelimiter;
@@ -138,8 +137,6 @@ void loadLevel(Editor *editor) {
     ifstream levelFile;
     levelFile.open(filename);
 
-    char delimiter = ';';
-
     if (levelFile.is_open()) {
         
         // Read version
@@ -147,9 +144,6 @@ void loadLevel(Editor *editor) {
         if (fileLine[0] == '#') {
             version = stoi(fileLine.substr(string("#version ").length(), fileLine.length()));
         };
-        // Get delimiter
-        getline(levelFile, fileLine);
-        delimiter = fileLine[0];
 
         // Only one version currently, so nothing special to do
         while (getline(levelFile, fileLine)) {            
@@ -159,19 +153,19 @@ void loadLevel(Editor *editor) {
             istringstream line(fileLine);
 
             int objectFieldCount = 0;
-            while (getline(line, element, delimiter) && objectFieldCount < 4) {
+            while (getline(line, element, editor->outputDelimiter) && objectFieldCount < 5) {
                 lineElements.push_back(stoi(element));
                 objectFieldCount++;
             }
 
             Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4]}  ;
-            
-            while (getline(line, element, delimiter)) {
+
+            while (getline(line, element, editor->outputDelimiter)) {
                 istringstream keyValuePair = istringstream(element);
                 string key;
                 string value;
                 getline(keyValuePair, key, '=');
-                getline(keyValuePair, value, delimiter);
+                getline(keyValuePair, value, editor->outputDelimiter);
                 obj.data.push_back({key, value});
             }
 
@@ -559,7 +553,7 @@ int main(int argc, char **argv) {
     camera.zoom = 1.0f;
 
     Editor editor = {};
-    editor.version = "0.0.1";
+    editor.version = 1;
     editor.outputDelimiter = ';';
     editor.state = EditorState::Editing;
     editor.keyOrValue = KeyOrValue::Key;
