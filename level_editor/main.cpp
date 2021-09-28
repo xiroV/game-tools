@@ -153,7 +153,7 @@ void loadLevel(Editor *editor) {
             istringstream line(fileLine);
 
             int objectFieldCount = 0;
-            while (getline(line, element, editor->outputDelimiter) && objectFieldCount < 5) {
+            while (objectFieldCount < 5 && getline(line, element, editor->outputDelimiter)) {
                 lineElements.push_back(stoi(element));
                 objectFieldCount++;
             }
