@@ -258,6 +258,14 @@ void control(Editor *editor) {
                 }
             } 
 
+            if (IsKeyPressed(KEY_LEFT)) {
+                if (exitWindowSelectedOption == 0) {
+                    exitWindowSelectedOption = 2;
+                } else {
+                    exitWindowSelectedOption -= 1;
+                }
+            }
+
             updateStringByCharInput(levelName, 60);
             break;
         } 
