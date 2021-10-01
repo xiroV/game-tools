@@ -8,6 +8,8 @@
 
 using namespace std;
 
+#define arraySize(x) (sizeof(x) / sizeof(x[0]))
+
 const int WINDOW_WIDTH = 1600;
 const int WINDOW_HEIGHT = 1000;
 const int FONT_SIZE = 20;
@@ -21,8 +23,31 @@ float cameraZoom = 1.0f;
 bool closeEditor = false;
 int exitWindowSelectedOption = 0;
 
-char illegalPathCharacters[] = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|'};
-string illegalFileNames[] = {};
+char illegalPathCharacters[] = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}'};
+string illegalFileNames[] = {
+    "aux",
+    "com1",
+    "com2",
+    "com3",
+    "com4",
+    "com5",
+    "com6",
+    "com7",
+    "com8",
+    "com9",
+    "lpt1",
+    "lpt2",
+    "lpt3",
+    "lpt4",
+    "lpt5",
+    "lpt6",
+    "lpt7",
+    "lpt8",
+    "lpt9",
+    "con",
+    "nul",
+    "prn"
+};
 
 string filename = "";
 string levelName = "";
@@ -201,10 +226,19 @@ bool isExitWindowOpen(EditorState state) {
     return false;
 }
 
-void updateStringByCharInput(string &str, const int maxLength) {
+bool anyMatch(char key, char *illegalChars) {
+    int arraySize = arraySize(illegalChars);
+    for (int i = 0; i < arraySize; i++) {
+        if (illegalChars[i] == key) return true;
+    }
+
+    return false;
+}
+
+void updateStringByCharInput(string &str, const int maxLength, char illegalChars[]) {
     int key = GetCharPressed();
     while (key > 0) {
-        if (str.size() < maxLength && key != ';' && key != '=') {
+        if (str.size() < maxLength && !anyMatch(key, illegalChars)) {
             str.push_back((char) key);
         }
 
@@ -268,7 +302,8 @@ void control(Editor *editor) {
                 }
             }
 
-            updateStringByCharInput(levelName, 60);
+            updateStringByCharInput(levelName, 60, illegalPathCharacters);
+
             break;
         } 
         case EditorState::EditKeyValue: {
@@ -291,7 +326,7 @@ void control(Editor *editor) {
                 ObjectData &current = editor->objects[editor->selectedObject].data[editor->editKeyValueIndex];
                 string &data = editor->keyOrValue == KeyOrValue::Key ? current.key : current.value; 
                 // Ah, geez end
-                updateStringByCharInput(data, 30);
+                updateStringByCharInput(data, 30, illegalPathCharacters);
             }
             break;
         }
@@ -599,7 +634,7 @@ int main(int argc, char **argv) {
     // So ESCAPE isn't eaten by ShouldWindowClose();
     SetExitKey(KEY_F10);
 
-    Camera2D camera = {0};
+    Camera2D camera = {};
     camera.target = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
     camera.offset = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
     camera.rotation = 0.0f;
