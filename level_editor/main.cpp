@@ -21,6 +21,36 @@ float cameraZoom = 1.0f;
 bool closeEditor = false;
 int exitWindowSelectedOption = 0;
 
+char illegalPathCharacters[] = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}', 0};
+char dotList[] = {'.', 0};
+
+string illegalFileNames[] = {
+    ".",
+    "..",
+    "aux",
+    "com1",
+    "com2",
+    "com3",
+    "com4",
+    "com5",
+    "com6",
+    "com7",
+    "com8",
+    "com9",
+    "lpt1",
+    "lpt2",
+    "lpt3",
+    "lpt4",
+    "lpt5",
+    "lpt6",
+    "lpt7",
+    "lpt8",
+    "lpt9",
+    "con",
+    "nul",
+    "prn"
+};
+
 string filename = "";
 string levelName = "";
 
@@ -68,6 +98,7 @@ struct Editor {
     KeyOrValue keyOrValue;
     char outputDelimiter;
     int version;
+    bool levelnameError;
 };
 
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
@@ -117,6 +148,14 @@ void saveLevel(Editor *editor) {
     }
 
     levelFile.close();
+}
+
+std::string toLowerCase(std::string str) {
+    std::string result = "";
+    for (auto &ch : str) {
+        result += std::tolower(ch);
+    }
+    return result;
 }
 
 string exportTypeToString(int type) {
@@ -198,10 +237,19 @@ bool isExitWindowOpen(EditorState state) {
     return false;
 }
 
-void updateStringByCharInput(string &str, const int maxLength) {
+bool anyMatch(char key, char illegalChars[]) {
+    // Currently REQUIRES final entry in array is 0.
+    for (int i = 0; illegalChars[i] != 0; i++) {
+        if (illegalChars[i] == key) return true;
+    }
+
+    return false;
+}
+
+void updateStringByCharInput(string &str, const int maxLength, char illegalChars[]) {
     int key = GetCharPressed();
     while (key > 0) {
-        if (str.size() < maxLength && key != ';' && key != '=') {
+        if (str.size() < maxLength && !anyMatch(key, illegalChars)) {
             str.push_back((char) key);
         }
 
@@ -265,7 +313,36 @@ void control(Editor *editor) {
                 }
             }
 
-            updateStringByCharInput(levelName, 60);
+            updateStringByCharInput(levelName, 60, illegalPathCharacters);
+            
+            editor->levelnameError = false;
+            bool containsDot = false;
+            int dotPlacement = -1;
+            for (auto &ch : levelName) {
+                bool containsDot = anyMatch(ch, dotList);
+                dotPlacement++;
+                if (containsDot) break;
+            }
+
+            if (containsDot && dotPlacement == 0) {
+                editor->levelnameError = true;
+            } else {
+                for (auto &filename : illegalFileNames) {
+                    auto lower = toLowerCase(levelName);
+                    if (containsDot) {
+                        if (filename == lower.substr(0, dotPlacement)) {
+                            editor->levelnameError = true;
+                            break;
+                        } 
+                    } else {
+                        if (filename == lower) {
+                            editor->levelnameError = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
             break;
         } 
         case EditorState::EditKeyValue: {
@@ -288,7 +365,7 @@ void control(Editor *editor) {
                 ObjectData &current = editor->objects[editor->selectedObject].data[editor->editKeyValueIndex];
                 string &data = editor->keyOrValue == KeyOrValue::Key ? current.key : current.value; 
                 // Ah, geez end
-                updateStringByCharInput(data, 30);
+                updateStringByCharInput(data, 30, illegalPathCharacters);
             }
             break;
         }
@@ -565,11 +642,11 @@ void drawWindows(Editor *editor) {
     int yBase = 120+FONT_SIZE;
 
     if (editor->state == EditorState::Closing) {
-        DrawRectangle(100, 100, WINDOW_WIDTH-200, WINDOW_HEIGHT-200, RAYWHITE);
+        DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
         DrawText("Please enter a level name", 120, yBase, FONT_SIZE, BLACK);
         DrawText(levelName.c_str(), 130, yBase+FONT_SIZE*2+FONT_SIZE/2, FONT_SIZE, BLACK);
-        DrawRectangleLines(120, yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
-
+        DrawRectangleLines(120, yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
+    
         DrawText("Save & Exit", 120+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
         DrawText("Close without saving", 120+75*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
         DrawText("Cancel", 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
@@ -596,7 +673,7 @@ int main(int argc, char **argv) {
     // So ESCAPE isn't eaten by ShouldWindowClose();
     SetExitKey(KEY_F10);
 
-    Camera2D camera = {0};
+    Camera2D camera = {};
     camera.target = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
     camera.offset = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
     camera.rotation = 0.0f;
