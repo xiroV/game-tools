@@ -382,6 +382,13 @@ void control(Editor *editor) {
                 editor->objects[editor->selectedObject].data.push_back({"key", "value"});
             }
 
+            if (IsKeyPressed(KEY_DELETE)) {
+                if (editor->objects[editor->selectedObject].data.size() > 0) {
+                    editor->objects[editor->selectedObject].data.erase(editor->objects[editor->selectedObject].data.begin() + editor->editKeyValueIndex);
+                    editor->editKeyValueIndex = 0;
+                }
+            }
+
             break;
         }
         case EditorState::ShowBlockTypes: {
