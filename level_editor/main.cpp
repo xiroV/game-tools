@@ -8,8 +8,6 @@
 
 using namespace std;
 
-#define arraySize(x) (sizeof(x) / sizeof(x[0]))
-
 const int WINDOW_WIDTH = 1600;
 const int WINDOW_HEIGHT = 1000;
 const int FONT_SIZE = 20;
@@ -23,8 +21,12 @@ float cameraZoom = 1.0f;
 bool closeEditor = false;
 int exitWindowSelectedOption = 0;
 
-char illegalPathCharacters[] = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}'};
+char illegalPathCharacters[] = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}', 0};
+char dotList[] = {'.', 0};
+
 string illegalFileNames[] = {
+    ".",
+    "..",
     "aux",
     "com1",
     "com2",
@@ -96,6 +98,7 @@ struct Editor {
     KeyOrValue keyOrValue;
     char outputDelimiter;
     int version;
+    bool levelnameError;
 };
 
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
@@ -226,9 +229,9 @@ bool isExitWindowOpen(EditorState state) {
     return false;
 }
 
-bool anyMatch(char key, char *illegalChars) {
-    int arraySize = arraySize(illegalChars);
-    for (int i = 0; i < arraySize; i++) {
+bool anyMatch(char key, char illegalChars[]) {
+    // Currently REQUIRES final entry in array is 0.
+    for (int i = 0; illegalChars[i] != 0; i++) {
         if (illegalChars[i] == key) return true;
     }
 
@@ -303,6 +306,33 @@ void control(Editor *editor) {
             }
 
             updateStringByCharInput(levelName, 60, illegalPathCharacters);
+            
+            editor->levelnameError = false;
+            bool containsDot = false;
+            int dotPlacement = -1;
+            for (auto &ch : levelName) {
+                bool containsDot = anyMatch(ch, dotList);
+                dotPlacement++;
+                if (containsDot) break;
+            }
+
+            if (containsDot && dotPlacement == 0) {
+                editor->levelnameError = true;
+            } else {
+                for (auto &filename : illegalFileNames) {
+                    if (containsDot) {
+                        if (filename == levelName.substr(0, dotPlacement)) {
+                            editor->levelnameError = true;
+                            break;
+                        }
+                    } else {
+                        if (filename == levelName) {
+                            editor->levelnameError = true;
+                            break;
+                        }
+                    }
+                }
+            }
 
             break;
         } 
@@ -603,11 +633,11 @@ void drawWindows(Editor *editor) {
     int yBase = 120+FONT_SIZE;
 
     if (editor->state == EditorState::Closing) {
-        DrawRectangle(100, 100, WINDOW_WIDTH-200, WINDOW_HEIGHT-200, RAYWHITE);
+        DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
         DrawText("Please enter a level name", 120, yBase, FONT_SIZE, BLACK);
         DrawText(levelName.c_str(), 130, yBase+FONT_SIZE*2+FONT_SIZE/2, FONT_SIZE, BLACK);
-        DrawRectangleLines(120, yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
-
+        DrawRectangleLines(120, yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
+    
         DrawText("Save & Exit", 120+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
         DrawText("Close without saving", 120+75*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
         DrawText("Cancel", 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
