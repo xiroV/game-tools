@@ -405,6 +405,12 @@ void control(Editor *editor) {
                 objectTypes.push_back({"", BLUE});
             }
 
+            if (IsKeyPressed(KEY_DELETE)) {
+                if (objectTypes.size() > 1) {
+                    objectTypes.erase(objectTypes.begin() + editor->editBlockTypeIndex);
+                    editor->editBlockTypeIndex = 0;
+                }
+            }
 
             break;
         }
