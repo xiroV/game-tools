@@ -447,11 +447,11 @@ void control(Editor *editor) {
                 }
 
                 // RESIZING
-                if (IsKeyPressed(KEY_W)) {
+                if (IsKeyPressed(KEY_S)) {
                     editor->objects[editor->selectedObject].height += RESIZE_INTERVAL;
                 }
 
-                if (IsKeyPressed(KEY_S)) {
+                if (IsKeyPressed(KEY_W)) {
                     if (editor->objects[editor->selectedObject].height >= RESIZE_INTERVAL) {
                         editor->objects[editor->selectedObject].height -= RESIZE_INTERVAL;
                     }
