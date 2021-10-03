@@ -642,7 +642,9 @@ void drawMenu(Editor *editor) {
         "[wasd] resize",
         "[del] delete",
         "[t] switch type",
-        "[page/up] zoom"
+        "[page/up] zoom",
+        "[y] edit types",
+        "[v] key/values"
     };
 
     int ypos = 10;
