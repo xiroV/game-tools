@@ -12,10 +12,11 @@ const int WINDOW_WIDTH = 1600;
 const int WINDOW_HEIGHT = 1000;
 const int FONT_SIZE = 20;
 const int MOVE_INTERVAL = 10;
+const int ROTATION_INTERVAL = 20;
 const int RESIZE_INTERVAL = 50;
 const int CAMERA_MOVE_SPEED = 5;
 
-Vector2 cameraTarget = {WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
+Vector2 cameraTarget = {WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f};
 float cameraZoom = 1.0f;
 
 bool closeEditor = false;
@@ -80,7 +81,7 @@ struct ObjectData {
 };
 
 struct Object {
-    int x, y, width, height;
+    int x, y, width, height, rotation;
     int type;
     vector<ObjectData> data;
 };
@@ -410,7 +411,7 @@ void control(Editor *editor) {
 
             // NEW OBJECT
             if (IsKeyPressed(KEY_N)) {
-                Object obj = {WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100};
+                Object obj = {WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100, 0};
                 editor->objects.push_back(obj);
                 editor->selectedObject = editor->objects.size()-1;
             }
@@ -466,6 +467,17 @@ void control(Editor *editor) {
                 if (IsKeyPressed(KEY_D)) {
                     editor->objects[editor->selectedObject].width += RESIZE_INTERVAL;
                 }
+                
+                // ROTATE 
+                if (IsKeyPressed(KEY_Q)) {
+                    editor->objects[editor->selectedObject].rotation = (editor->objects[editor->selectedObject].rotation - ROTATION_INTERVAL) % 360;
+
+                }
+
+                if (IsKeyPressed(KEY_E)) {
+                    editor->objects[editor->selectedObject].rotation = (editor->objects[editor->selectedObject].rotation + ROTATION_INTERVAL) % 360;
+                }
+
 
                 // DELETE
                 if (IsKeyPressed(KEY_DELETE)) {
@@ -581,58 +593,64 @@ void drawMenu(Editor *editor) {
 
 void drawObjects(Camera2D *camera, Editor *editor) {
     for (unsigned int i = 0; i < editor->objects.size(); i++) {
-        if (editor->objects[i].width == 0 && editor->objects[i].height == 0) {
-            DrawCircle(editor->objects[i].x, editor->objects[i].y, 5, objectTypeColor(editor->objects[i].type));
-        } else if (editor->objects[i].width == 0) {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, 1, editor->objects[i].height, objectTypeColor(editor->objects[i].type));
-        } else if (editor->objects[i].height == 0) {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, 1, objectTypeColor(editor->objects[i].type));
+        auto &object = editor->objects[i];
+        if (object.width == 0 && object.height == 0) {
+            DrawCircle(object.x, object.y, 5, objectTypeColor(object.type));
+        } else if (object.width == 0) {
+            DrawRectanglePro(Rectangle {object.x, object.y, 1, object.height}, Vector2 {object.width / 2, object.height / 2}, object.rotation, objectTypeColor(object.type));
+        } else if (object.height == 0) {
+            DrawRectanglePro(Rectangle {object.x, object.y, object.width, 1}, Vector2 {object.width / 2, object.height / 2}, object.rotation, objectTypeColor(object.type));
         } else {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, editor->objects[i].height, objectTypeColor(editor->objects[i].type));
+            DrawRectanglePro(Rectangle {object.x, object.y, object.width, object.height}, Vector2 {object.width / 2, object.height / 2}, object.rotation, objectTypeColor(object.type));
         }
     }
 
     if (isElementSelected(editor)) {
-        if (editor->objects[editor->selectedObject].width == 0 && editor->objects[editor->selectedObject].height == 0) {
+        auto &selectedObject = editor->objects[editor->selectedObject];
+
+        if (selectedObject.width == 0 && selectedObject.height == 0) {
             DrawCircleLines(
-                editor->objects[editor->selectedObject].x,
-                editor->objects[editor->selectedObject].y,
-                5,
+                selectedObject.x,
+                selectedObject.y,
+                5.0f,
                 GREEN
             );
-        } else if (editor->objects[editor->selectedObject].width == 0) {
-            DrawRectangleLinesEx(
+        } else if (selectedObject.width == 0) {
+            DrawRectanglePro(
                 Rectangle {
-                    (float) editor->objects[editor->selectedObject].x,
-                    (float) editor->objects[editor->selectedObject].y,
-                    (float) 2.0,
-                    (float) editor->objects[editor->selectedObject].height,
+                    (float) selectedObject.x,
+                    (float) selectedObject.y,
+                    (float) 1.0f,
+                    (float) selectedObject.height,
                 },
-                6-camera->zoom*2,
+                Vector2 {
+                    (float) selectedObject.width / 2,
+                    (float) selectedObject.height / 2 
+                },
+                selectedObject.rotation,
                 GREEN
             );
-        } else if (editor->objects[editor->selectedObject].height == 0) {
-            DrawRectangleLinesEx(
+        } else if (selectedObject.height == 0) {
+            DrawRectanglePro(
                 Rectangle {
-                    (float) editor->objects[editor->selectedObject].x,
-                    (float) editor->objects[editor->selectedObject].y,
-                    (float) editor->objects[editor->selectedObject].width,
-                    (float) 2.0,
+                    (float) selectedObject.x,
+                    (float) selectedObject.y,
+                    (float) selectedObject.width,
+                    (float) 1.0,
                 },
-                6-camera->zoom*2,
+                Vector2 {
+                    (float) selectedObject.width / 2,
+                    (float) selectedObject.height / 2 
+                },
+                selectedObject.rotation,
                 GREEN
             );
         } else {
-            DrawRectangleLinesEx(
-                Rectangle {
-                    (float) editor->objects[editor->selectedObject].x,
-                    (float) editor->objects[editor->selectedObject].y,
-                    (float) editor->objects[editor->selectedObject].width,
-                    (float) editor->objects[editor->selectedObject].height,
-                },
-                6-camera->zoom*2,
-                GREEN
-            );
+            // TODO: Rotate selected x, y
+            DrawLineEx(Vector2{(float) selectedObject.x, (float) selectedObject.y}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y}, 2, GREEN);
+            DrawLineEx(Vector2{(float) selectedObject.x, (float) selectedObject.y}, Vector2 {selectedObject.x, selectedObject.y + selectedObject.height}, 2, GREEN);
+            DrawLineEx(Vector2{(float) selectedObject.x + selectedObject.width, selectedObject.y}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y +  selectedObject.height}, 2, GREEN);
+            DrawLineEx(Vector2{(float) selectedObject.x, selectedObject.y + selectedObject.height}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y +  selectedObject.height}, 2, GREEN);
         }
     }
 }
@@ -674,8 +692,8 @@ int main(int argc, char **argv) {
     SetExitKey(KEY_F10);
 
     Camera2D camera = {};
-    camera.target = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
-    camera.offset = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
+    camera.target = Vector2 {WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
+    camera.offset = Vector2 {WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
 
