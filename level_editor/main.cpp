@@ -150,6 +150,14 @@ void saveLevel(Editor *editor) {
     levelFile.close();
 }
 
+std::string toLowerCase(std::string str) {
+    std::string result = "";
+    for (auto &ch : str) {
+        result += std::tolower(ch);
+    }
+    return result;
+}
+
 string exportTypeToString(int type) {
     switch (type) {
         case ExportType::LVL:
@@ -320,13 +328,14 @@ void control(Editor *editor) {
                 editor->levelnameError = true;
             } else {
                 for (auto &filename : illegalFileNames) {
+                    auto lower = toLowerCase(levelName);
                     if (containsDot) {
-                        if (filename == levelName.substr(0, dotPlacement)) {
+                        if (filename == lower.substr(0, dotPlacement)) {
                             editor->levelnameError = true;
                             break;
-                        }
+                        } 
                     } else {
-                        if (filename == levelName) {
+                        if (filename == lower) {
                             editor->levelnameError = true;
                             break;
                         }
