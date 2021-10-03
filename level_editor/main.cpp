@@ -54,24 +54,29 @@ string illegalFileNames[] = {
 string filename = "";
 string levelName = "";
 
-enum ObjectType {
-    Block,
-    Spawn
-};
-
 enum ExportType {
     LVL,
     CPP
 };
 int selectedExportType = ExportType::LVL;
 
-vector<ObjectType> objectTypes = { ObjectType::Block, ObjectType::Spawn};
+struct ObjectType {
+    string name;
+    Color color;
+};
+
+vector<ObjectType> objectTypes = {
+    {"Block", RED},
+    {"Spawn", BLUE}
+};
 
 enum class EditorState {
     Editing,
     Closing,
     ShowKeyValue,
-    EditKeyValue
+    EditKeyValue,
+    ShowBlockTypes,
+    EditBlockTypes
 };
 
 struct ObjectData {
@@ -90,40 +95,25 @@ enum class KeyOrValue {
     Value
 };
 
+enum class ObjectTypeParameter {
+    Name,
+    Color 
+};
+
 struct Editor {
     EditorState state;
     vector<Object> objects; 
     int selectedObject;
     int editKeyValueIndex;
     KeyOrValue keyOrValue;
+    ObjectTypeParameter objectTypeParameter;
+    int editBlockTypeIndex;
     char outputDelimiter;
     int version;
     bool levelnameError;
 };
 
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
-
-string objectTypeToString(int type) {
-    switch(type) {
-        case ObjectType::Block:
-            return "Block";
-        case ObjectType::Spawn:
-            return "Spawn";
-        default:
-            return "Block";
-    }
-}
-
-Color objectTypeColor(int type) {
-    switch(type) {
-        case ObjectType::Block:
-            return RED;
-        case ObjectType::Spawn:
-            return BLUE;
-        default:
-            return RED;
-    }
-}
 
 void saveLevel(Editor *editor) {
     ofstream levelFile;
@@ -224,7 +214,7 @@ void loadLevel(Editor *editor) {
 
 
 bool isElementSelected(Editor *editor) {
-    if (editor->selectedObject >= 0 && editor->selectedObject < editor->objects.size()) {
+    if (editor->selectedObject >= 0 && editor->selectedObject < (int) editor->objects.size()) {
         return true;
     }
     return false;
@@ -249,7 +239,7 @@ bool anyMatch(char key, char illegalChars[]) {
 void updateStringByCharInput(string &str, const int maxLength, char illegalChars[]) {
     int key = GetCharPressed();
     while (key > 0) {
-        if (str.size() < maxLength && !anyMatch(key, illegalChars)) {
+        if ((int) str.size() < maxLength && !anyMatch(key, illegalChars)) {
             str.push_back((char) key);
         }
 
@@ -394,6 +384,62 @@ void control(Editor *editor) {
 
             break;
         }
+        case EditorState::ShowBlockTypes: {
+            if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_V)) {
+                editor->state = EditorState::Editing;
+            }
+
+            if (IsKeyPressed(KEY_ENTER)) {
+                editor->state = EditorState::EditBlockTypes;
+            }
+
+            if (IsKeyPressed(KEY_DOWN)) {
+                ++editor->editBlockTypeIndex %= objectTypes.size();
+            }
+
+            if (IsKeyPressed(KEY_UP)) {
+                --editor->editBlockTypeIndex %= objectTypes.size();
+            }
+
+            if (IsKeyPressed(KEY_N)) {
+                objectTypes.push_back({"", BLUE});
+            }
+
+
+            break;
+        }
+        case EditorState::EditBlockTypes: {
+            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) {
+                editor->state = EditorState::ShowBlockTypes;     
+            } else {
+                if (
+                    IsKeyPressed(KEY_TAB) ||
+                    (editor->objectTypeParameter == ObjectTypeParameter::Name && IsKeyPressed(KEY_RIGHT)) ||
+                    (editor->objectTypeParameter == ObjectTypeParameter::Color && IsKeyPressed(KEY_LEFT))
+                ) {
+                    if (editor->objectTypeParameter == ObjectTypeParameter::Name) {
+                        editor->objectTypeParameter= ObjectTypeParameter::Color;
+                    } else {
+                        editor->objectTypeParameter = ObjectTypeParameter::Name;
+                    }
+                } 
+
+                ObjectType &current = objectTypes[editor->editBlockTypeIndex];
+                if (editor->objectTypeParameter == ObjectTypeParameter::Name) {
+                    updateStringByCharInput(current.name, 30, illegalPathCharacters);
+                } else {
+                    if (IsKeyPressed(KEY_SPACE)) {
+                        current.color = (Color) {
+                            static_cast<unsigned char>(GetRandomValue(0,255)),
+                            static_cast<unsigned char>(GetRandomValue(0, 255)),
+                            static_cast<unsigned char>(GetRandomValue(0,255)),
+                            255
+                        }; 
+                    }
+                }
+            }
+            break;
+        }
         case EditorState::Editing: {
             if (IsKeyPressed(KEY_ESCAPE)) {
                 editor->state = EditorState::Closing;
@@ -406,7 +452,10 @@ void control(Editor *editor) {
             if (IsKeyPressed(KEY_PAGE_DOWN)) {
                 cameraZoom -= 0.5;
             }
-    
+
+            if (IsKeyPressed(KEY_Y)) {
+                editor->state = EditorState::ShowBlockTypes;
+            }
 
             // NEW OBJECT
             if (IsKeyPressed(KEY_N)) {
@@ -417,7 +466,7 @@ void control(Editor *editor) {
 
             // SWITCH SELECTED
             if (IsKeyPressed(KEY_TAB)) {
-                if (editor->selectedObject + 1 < editor->objects.size()) {
+                if (editor->selectedObject + 1 < (int) editor->objects.size()) {
                     editor->selectedObject += 1;
                 } else {
                     if (editor->objects.size() > 0) {
@@ -428,6 +477,7 @@ void control(Editor *editor) {
                             
                 }
             }
+
             if (isElementSelected(editor)) {
                 // MOVEMENT
                 if (IsKeyPressed(KEY_UP)) {
@@ -479,7 +529,7 @@ void control(Editor *editor) {
 
                 // CHANGE TYPE
                 if (IsKeyPressed(KEY_T)) {
-                    if (editor->objects[editor->selectedObject].type+1 >= objectTypes.size()) {
+                    if (editor->objects[editor->selectedObject].type+1 >= (int) objectTypes.size()) {
                         editor->objects[editor->selectedObject].type = 0;
                     } else {
                         editor->objects[editor->selectedObject].type += 1;
@@ -491,7 +541,7 @@ void control(Editor *editor) {
                     editor->state = EditorState::ShowKeyValue;
                 }
 
-            } else {
+             } else {
                 // MOVEMENT
                 if (IsKeyDown(KEY_UP)) {
                     cameraTarget.y -= CAMERA_MOVE_SPEED;
@@ -549,6 +599,40 @@ void drawKeyValueList(Editor *editor) {
     }
 }
 
+void drawBlockTypeEditor(Editor *editor) {
+    if (editor->state != EditorState::ShowBlockTypes && editor->state != EditorState::EditBlockTypes) return;
+    DrawRectangle(5, 5, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, GRAY);
+    DrawText("[n] for new block type", WINDOW_WIDTH - 280, 10, FONT_SIZE, WHITE);
+
+    int offsetY = 40;
+    int currentIndex = 0;
+    for (auto &blockType: objectTypes) {
+        DrawText(blockType.name.c_str(), 15, offsetY, FONT_SIZE, WHITE);
+        DrawRectangle(15 + WINDOW_WIDTH / 2, offsetY, 100, 20, blockType.color);
+
+        if (currentIndex == editor->editBlockTypeIndex) {
+            if (editor->state == EditorState::EditBlockTypes) {
+                switch (editor->objectTypeParameter) {
+                    case ObjectTypeParameter::Name: {
+                        DrawRectangleLines(10, offsetY, (WINDOW_WIDTH - 30) / 2, FONT_SIZE, YELLOW);
+                        break;
+                    }
+                    case ObjectTypeParameter::Color: {
+                        DrawRectangleLines(10 + WINDOW_WIDTH / 2, offsetY, (WINDOW_WIDTH - 30) / 2, FONT_SIZE, YELLOW);
+                        DrawText("[space] to change", 10 + WINDOW_WIDTH / 2 + 120, offsetY, FONT_SIZE, WHITE);
+                        break;
+                    }
+                }
+            } else {
+                DrawRectangleLines(10, offsetY, WINDOW_WIDTH - 30, FONT_SIZE, YELLOW);
+            }
+        }
+
+        offsetY += FONT_SIZE + 4;
+        currentIndex++;
+    }
+}
+
 void drawMenu(Editor *editor) {
     int xpos = WINDOW_WIDTH-FONT_SIZE*8;
 
@@ -570,11 +654,11 @@ void drawMenu(Editor *editor) {
 
     if (isElementSelected(editor)) {
         DrawText(
-            objectTypeToString(editor->objects[editor->selectedObject].type).c_str(),
-            WINDOW_WIDTH - 20 - objectTypeToString(editor->objects[editor->selectedObject].type).size() * FONT_SIZE * 0.6,
+            objectTypes[editor->objects[editor->selectedObject].type].name.c_str(),
+            WINDOW_WIDTH - 20 - objectTypes[editor->objects[editor->selectedObject].type].name.size() * FONT_SIZE * 0.6,
             WINDOW_HEIGHT - 30,
             FONT_SIZE,
-            objectTypeColor(editor->objects[editor->selectedObject].type) 
+            objectTypes[editor->objects[editor->selectedObject].type].color
         );
     }
 }
@@ -582,13 +666,13 @@ void drawMenu(Editor *editor) {
 void drawObjects(Camera2D *camera, Editor *editor) {
     for (unsigned int i = 0; i < editor->objects.size(); i++) {
         if (editor->objects[i].width == 0 && editor->objects[i].height == 0) {
-            DrawCircle(editor->objects[i].x, editor->objects[i].y, 5, objectTypeColor(editor->objects[i].type));
+            DrawCircle(editor->objects[i].x, editor->objects[i].y, 5, objectTypes[editor->objects[i].type].color);
         } else if (editor->objects[i].width == 0) {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, 1, editor->objects[i].height, objectTypeColor(editor->objects[i].type));
+            DrawRectangle(editor->objects[i].x, editor->objects[i].y, 1, editor->objects[i].height, objectTypes[editor->objects[i].type].color);
         } else if (editor->objects[i].height == 0) {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, 1, objectTypeColor(editor->objects[i].type));
+            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, 1, objectTypes[editor->objects[i].type].color);
         } else {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, editor->objects[i].height, objectTypeColor(editor->objects[i].type));
+            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, editor->objects[i].height, objectTypes[editor->objects[i].type].color);
         }
     }
 
@@ -686,6 +770,7 @@ int main(int argc, char **argv) {
     editor.keyOrValue = KeyOrValue::Key;
     editor.selectedObject = -1;
     editor.editKeyValueIndex = 0;
+    editor.editBlockTypeIndex = 0;
 
     if (argc > 1) {
         filename = argv[1];
@@ -715,6 +800,7 @@ int main(int argc, char **argv) {
             drawMenu(&editor);
             drawWindows(&editor);
             drawKeyValueList(&editor);
+            drawBlockTypeEditor(&editor);
         EndDrawing();
 
         camera.zoom = 0;
