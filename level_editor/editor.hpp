@@ -37,21 +37,20 @@ enum class EditorState {
     EditBlockTypes
 };
 
-class Editor {
-    public:
-        EditorState state;
-        vector<Object> objects; 
-        int selectedObject;
-        int editKeyValueIndex;
-        KeyOrValue keyOrValue;
-        ObjectTypeParameter objectTypeParameter;
-        int editBlockTypeIndex;
-        char outputDelimiter;
-        int version;
-        bool levelnameError;
-        Font defaultFont;
+struct Editor {
+    EditorState state;
+    vector<Object> objects; 
+    int selectedObject;
+    int editKeyValueIndex;
+    KeyOrValue keyOrValue;
+    ObjectTypeParameter objectTypeParameter;
+    int editBlockTypeIndex;
+    char outputDelimiter;
+    int version;
+    bool levelnameError;
+    Font defaultFont;
 
-        void drawText(string text, Vector2 position, Color color = BLACK);
+    void drawText(string text, Vector2 position, Color color = BLACK);
 };
 
 #endif
