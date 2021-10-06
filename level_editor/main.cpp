@@ -6,6 +6,8 @@
 #include <fstream>
 #include <raylib.h>
 #include "editor.hpp"
+#include "export/cpp.hpp"
+#include "export/lvl.hpp"
 
 using namespace std;
 
@@ -59,11 +61,7 @@ void Editor::drawText(string text, Vector2 position, Color color) {
     DrawTextEx(this->defaultFont, text.c_str(), position, FONT_SIZE, 0, color);
 }
 
-enum ExportType {
-    LVL,
-    CPP
-};
-int selectedExportType = ExportType::LVL;
+int selectedExporter = 0;
 
 struct ObjectType {
     string name;
@@ -77,11 +75,13 @@ vector<ObjectType> objectTypes = {
 
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
 
-void saveLevel(Editor *editor) {
+void saveLevel(Editor *editor, Exporter* exporter) {
     ofstream levelFile;
     levelFile.open(filename, ios::out);
 
     if (levelFile.is_open()) {
+        levelFile << exporter->generate(editor);
+        /*
         levelFile << "#version " << editor->version << endl;
         for (unsigned int i = 0; i < editor->objects.size(); i++) {
             levelFile << editor->objects[i].x << editor->outputDelimiter << editor->objects[i].y <<
@@ -95,6 +95,7 @@ void saveLevel(Editor *editor) {
 
                 levelFile << endl;
         }
+        */
     } else {
         cout << "Unable to open file " << filename << endl;
     }
@@ -108,17 +109,6 @@ std::string toLowerCase(std::string str) {
         result += std::tolower(ch);
     }
     return result;
-}
-
-string exportTypeToString(int type) {
-    switch (type) {
-        case ExportType::LVL:
-            return "LVL";
-        case ExportType::CPP:
-            return "C++ (not implemented)";
-        default:
-            return "LVL";
-    }
 }
 
 void loadLevel(Editor *editor) {
@@ -215,7 +205,7 @@ void updateStringByCharInput(string &str, const int maxLength, char illegalChars
     }
 }
 
-void control(Editor *editor) {
+void control(Editor *editor, vector<Exporter*> exporters) {
 
     if (IsKeyDown(KEY_LEFT_ALT) && IsKeyDown(KEY_F4)) {
         if (isElementSelected(editor)) {
@@ -238,8 +228,8 @@ void control(Editor *editor) {
             if (IsKeyPressed(KEY_ENTER)) {
                 if (exitWindowSelectedOption == 0) {
                     if (levelName.size() > 0) {
-                        filename = levelName + ".lvl";
-                        saveLevel(editor);
+                        filename = levelName + "." + exporters[selectedExporter]->extension();
+                        saveLevel(editor, exporters[selectedExporter]);
                         closeEditor = true;
                     }
                 } else if(exitWindowSelectedOption == 1) {
@@ -262,6 +252,22 @@ void control(Editor *editor) {
                     exitWindowSelectedOption = 2;
                 } else {
                     exitWindowSelectedOption -= 1;
+                }
+            }
+
+            if (IsKeyPressed(KEY_PAGE_UP)) {
+                if (selectedExporter <= 0) {
+                    selectedExporter = exporters.size()  - 1;
+                } else {
+                    selectedExporter -= 1;
+                }
+            }
+
+            if (IsKeyPressed(KEY_PAGE_DOWN)) {
+                if (selectedExporter >= (int) exporters.size() - 1) {
+                    selectedExporter = 0;
+                } else {
+                    selectedExporter += 1;
                 }
             }
 
@@ -695,29 +701,33 @@ void drawObjects(Camera2D *camera, Editor *editor) {
     }
 }
 
-void drawWindows(Editor *editor) {
+void drawWindows(Editor *editor, vector<Exporter*> exporters) {
     int scale = FONT_SIZE/10;
     int yBase = 120+FONT_SIZE;
 
     if (editor->state == EditorState::Closing) {
         DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
         editor->drawText("Please enter a level name", {120, (float) yBase});
-        editor->drawText(levelName, {130, (float) yBase+FONT_SIZE*2+FONT_SIZE/2});
-        DrawRectangleLines(120, yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
-    
-        editor->drawText("Save & Exit", {120+FONT_SIZE/2, (float) yBase+FONT_SIZE*5+FONT_SIZE/2});
-        editor->drawText("Close without saving", {(float) 120+75*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*5+FONT_SIZE/2});
-        editor->drawText("Cancel", {(float) 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*5+FONT_SIZE/2});
+        editor->drawText(levelName, {130, (float) yBase+FONT_SIZE+FONT_SIZE/2});
+        DrawRectangleLines(120, yBase+FONT_SIZE, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
+
+        editor->drawText("Export type", {120, (float)yBase+FONT_SIZE*4});
+        DrawRectangleLines(120, yBase+FONT_SIZE*5, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
+        editor->drawText(exporters[selectedExporter]->name(), {120+FONT_SIZE/2, (float)yBase+FONT_SIZE*5+FONT_SIZE/2});
+
+        editor->drawText("Save & Exit", {120+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
+        editor->drawText("Close without saving", {(float) 120+75*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
+        editor->drawText("Cancel", {(float) 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
 
         switch(exitWindowSelectedOption) {
             case 0:
-                DrawRectangleLines(120, yBase+FONT_SIZE*5, 75*scale, FONT_SIZE*2, BLACK);
+                DrawRectangleLines(120, yBase+FONT_SIZE*8, 75*scale, FONT_SIZE*2, BLACK);
                 break;
             case 1:
-                DrawRectangleLines(120 + 75 * scale + FONT_SIZE, yBase+FONT_SIZE*5, 120*scale, FONT_SIZE*2, BLACK);
+                DrawRectangleLines(120 + 75 * scale + FONT_SIZE, yBase+FONT_SIZE*8, 120*scale, FONT_SIZE*2, BLACK);
                 break;
             case 2:
-                DrawRectangleLines(120 + 75 * scale + FONT_SIZE + 120 * scale + FONT_SIZE, yBase + FONT_SIZE * 5, 60 * scale, FONT_SIZE * 2, BLACK);
+                DrawRectangleLines(120 + 75 * scale + FONT_SIZE + 120 * scale + FONT_SIZE, yBase + FONT_SIZE * 8, 60 * scale, FONT_SIZE * 2, BLACK);
                 break;
         }
 
@@ -740,6 +750,9 @@ int main(int argc, char **argv) {
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
 
+    CppExporter cppExport;
+    LvlExporter lvlExport;
+
     Editor editor = {};
     editor.version = 1;
     editor.outputDelimiter = ';';
@@ -750,13 +763,18 @@ int main(int argc, char **argv) {
     editor.editBlockTypeIndex = 0;
     editor.defaultFont = fontDefault;
 
+    vector<Exporter*> exporters = {
+        &lvlExport,
+        &cppExport
+    };
+
     if (argc > 1) {
         filename = argv[1];
         loadLevel(&editor);
     }
 
     while (!closeEditor) {
-        control(&editor);
+        control(&editor, exporters);
 
         camera.zoom += cameraZoom;
         if (camera.zoom > 2.0f) {
@@ -776,7 +794,7 @@ int main(int argc, char **argv) {
                 drawObjects(&camera, &editor);
             EndMode2D();
             drawMenu(&editor);
-            drawWindows(&editor);
+            drawWindows(&editor, exporters);
             drawKeyValueList(&editor);
             drawBlockTypeEditor(&editor);
         EndDrawing();
