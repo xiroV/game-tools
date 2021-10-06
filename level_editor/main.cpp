@@ -5,6 +5,7 @@
 #include <vector>
 #include <fstream>
 #include <raylib.h>
+#include "editor.hpp"
 
 using namespace std;
 
@@ -54,6 +55,10 @@ string illegalFileNames[] = {
 string filename = "";
 string levelName = "";
 
+void Editor::drawText(string text, Vector2 position, Color color) {
+    DrawTextEx(this->defaultFont, text.c_str(), position, FONT_SIZE, 0, color);
+}
+
 enum ExportType {
     LVL,
     CPP
@@ -68,49 +73,6 @@ struct ObjectType {
 vector<ObjectType> objectTypes = {
     {"Block", RED},
     {"Spawn", BLUE}
-};
-
-enum class EditorState {
-    Editing,
-    Closing,
-    ShowKeyValue,
-    EditKeyValue,
-    ShowBlockTypes,
-    EditBlockTypes
-};
-
-struct ObjectData {
-    string key;
-    string value;
-};
-
-struct Object {
-    int x, y, width, height;
-    int type;
-    vector<ObjectData> data;
-};
-
-enum class KeyOrValue {
-    Key,
-    Value
-};
-
-enum class ObjectTypeParameter {
-    Name,
-    Color 
-};
-
-struct Editor {
-    EditorState state;
-    vector<Object> objects; 
-    int selectedObject;
-    int editKeyValueIndex;
-    KeyOrValue keyOrValue;
-    ObjectTypeParameter objectTypeParameter;
-    int editBlockTypeIndex;
-    char outputDelimiter;
-    int version;
-    bool levelnameError;
 };
 
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
@@ -581,14 +543,14 @@ void control(Editor *editor) {
 void drawKeyValueList(Editor *editor) {
     if (editor->selectedObject == -1 || (editor->state != EditorState::ShowKeyValue && editor->state != EditorState::EditKeyValue)) return;
     DrawRectangle(5, 5, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, GRAY);
-    DrawText("[n] for new Key Value Pair", WINDOW_WIDTH - 280, 10, FONT_SIZE, WHITE);
+    editor->drawText("[n] for new Key Value Pair", {WINDOW_WIDTH - 280, 10}, WHITE);
     Object &element = editor->objects[editor->selectedObject];
 
     int offsetY = 40;
     int currentIndex = 0;
     for (auto &entry : element.data) {
-        DrawText(entry.key.c_str(), 15, offsetY, FONT_SIZE, WHITE);
-        DrawText(entry.value.c_str(), 15 + WINDOW_WIDTH / 2, offsetY, FONT_SIZE, WHITE);
+        editor->drawText(entry.key, {15, (float) offsetY}, WHITE);
+        editor->drawText(entry.value, {15 + WINDOW_WIDTH / 2, (float) offsetY}, WHITE);
 
         if (currentIndex == editor->editKeyValueIndex) {
             if (editor->state == EditorState::EditKeyValue) {
@@ -615,12 +577,12 @@ void drawKeyValueList(Editor *editor) {
 void drawBlockTypeEditor(Editor *editor) {
     if (editor->state != EditorState::ShowBlockTypes && editor->state != EditorState::EditBlockTypes) return;
     DrawRectangle(5, 5, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, GRAY);
-    DrawText("[n] for new block type", WINDOW_WIDTH - 280, 10, FONT_SIZE, WHITE);
+    editor->drawText("[n] for new block type", {WINDOW_WIDTH - 280, 10}, WHITE);
 
     int offsetY = 40;
     int currentIndex = 0;
     for (auto &blockType: objectTypes) {
-        DrawText(blockType.name.c_str(), 15, offsetY, FONT_SIZE, WHITE);
+        editor->drawText(blockType.name, {15, (float) offsetY}, WHITE);
         DrawRectangle(15 + WINDOW_WIDTH / 2, offsetY, 100, 20, blockType.color);
 
         if (currentIndex == editor->editBlockTypeIndex) {
@@ -632,7 +594,7 @@ void drawBlockTypeEditor(Editor *editor) {
                     }
                     case ObjectTypeParameter::Color: {
                         DrawRectangleLines(10 + WINDOW_WIDTH / 2, offsetY, (WINDOW_WIDTH - 30) / 2, FONT_SIZE, YELLOW);
-                        DrawText("[space] to change", 10 + WINDOW_WIDTH / 2 + 120, offsetY, FONT_SIZE, WHITE);
+                        editor->drawText("[space] to change", {10 + WINDOW_WIDTH / 2 + 120, (float) offsetY}, WHITE);
                         break;
                     }
                 }
@@ -662,17 +624,14 @@ void drawMenu(Editor *editor) {
 
     int ypos = 10;
     for (unsigned int i = 0; i < entries.size(); i++) {
-        DrawText(entries[i], xpos, ypos, FONT_SIZE, LIGHTGRAY);
+        editor->drawText(entries[i], {(float) xpos, (float) ypos}, LIGHTGRAY);
         ypos += 8+FONT_SIZE;
     }
 
-
     if (isElementSelected(editor)) {
-        DrawText(
-            objectTypes[editor->objects[editor->selectedObject].type].name.c_str(),
-            WINDOW_WIDTH - 20 - objectTypes[editor->objects[editor->selectedObject].type].name.size() * FONT_SIZE * 0.6,
-            WINDOW_HEIGHT - 30,
-            FONT_SIZE,
+        editor->drawText(
+            objectTypes[editor->objects[editor->selectedObject].type].name,
+            { 20, WINDOW_HEIGHT - 30},
             objectTypes[editor->objects[editor->selectedObject].type].color
         );
     }
@@ -742,13 +701,13 @@ void drawWindows(Editor *editor) {
 
     if (editor->state == EditorState::Closing) {
         DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
-        DrawText("Please enter a level name", 120, yBase, FONT_SIZE, BLACK);
-        DrawText(levelName.c_str(), 130, yBase+FONT_SIZE*2+FONT_SIZE/2, FONT_SIZE, BLACK);
+        editor->drawText("Please enter a level name", {120, (float) yBase});
+        editor->drawText(levelName, {130, (float) yBase+FONT_SIZE*2+FONT_SIZE/2});
         DrawRectangleLines(120, yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
     
-        DrawText("Save & Exit", 120+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
-        DrawText("Close without saving", 120+75*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
-        DrawText("Cancel", 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, yBase+FONT_SIZE*5+FONT_SIZE/2, FONT_SIZE, BLACK);
+        editor->drawText("Save & Exit", {120+FONT_SIZE/2, (float) yBase+FONT_SIZE*5+FONT_SIZE/2});
+        editor->drawText("Close without saving", {(float) 120+75*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*5+FONT_SIZE/2});
+        editor->drawText("Cancel", {(float) 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*5+FONT_SIZE/2});
 
         switch(exitWindowSelectedOption) {
             case 0:
@@ -772,6 +731,9 @@ int main(int argc, char **argv) {
     // So ESCAPE isn't eaten by ShouldWindowClose();
     SetExitKey(KEY_F10);
 
+    Font fontDefault = LoadFontEx("assets/fonts/OverpassMono/OverpassMono-Regular.ttf", FONT_SIZE, 0, 0);
+    SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
+
     Camera2D camera = {};
     camera.target = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
     camera.offset = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
@@ -786,6 +748,7 @@ int main(int argc, char **argv) {
     editor.selectedObject = -1;
     editor.editKeyValueIndex = 0;
     editor.editBlockTypeIndex = 0;
+    editor.defaultFont = fontDefault;
 
     if (argc > 1) {
         filename = argv[1];
