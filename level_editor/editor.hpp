@@ -34,7 +34,8 @@ enum class EditorState {
     ShowKeyValue,
     EditKeyValue,
     ShowBlockTypes,
-    EditBlockTypes
+    EditBlockTypes,
+    Export
 };
 
 struct Editor {

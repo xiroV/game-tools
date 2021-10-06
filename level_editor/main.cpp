@@ -23,6 +23,7 @@ float cameraZoom = 1.0f;
 
 bool closeEditor = false;
 int exitWindowSelectedOption = 0;
+int exportWindowSelectedOption = 0;
 
 char illegalPathCharacters[] = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}', 0};
 char dotList[] = {'.', 0};
@@ -172,13 +173,6 @@ bool isElementSelected(Editor *editor) {
     return false;
 }
 
-bool isExitWindowOpen(EditorState state) {
-    if (EditorState::Closing == state) {
-        return true;
-    }
-    return false;
-}
-
 bool anyMatch(char key, char illegalChars[]) {
     // Currently REQUIRES final entry in array is 0.
     for (int i = 0; illegalChars[i] != 0; i++) {
@@ -228,8 +222,8 @@ void control(Editor *editor, vector<Exporter*> exporters) {
             if (IsKeyPressed(KEY_ENTER)) {
                 if (exitWindowSelectedOption == 0) {
                     if (levelName.size() > 0) {
-                        filename = levelName + "." + exporters[selectedExporter]->extension();
-                        saveLevel(editor, exporters[selectedExporter]);
+                        filename = levelName + "." + exporters[0]->extension();
+                        saveLevel(editor, exporters[0]);
                         closeEditor = true;
                     }
                 } else if(exitWindowSelectedOption == 1) {
@@ -255,7 +249,70 @@ void control(Editor *editor, vector<Exporter*> exporters) {
                 }
             }
 
-            if (IsKeyPressed(KEY_PAGE_UP)) {
+            updateStringByCharInput(levelName, 60, illegalPathCharacters);
+            
+            editor->levelnameError = false;
+            bool containsDot = false;
+            int dotPlacement = -1;
+            for (auto &ch : levelName) {
+                bool containsDot = anyMatch(ch, dotList);
+                dotPlacement++;
+                if (containsDot) break;
+            }
+
+            if (containsDot && dotPlacement == 0) {
+                editor->levelnameError = true;
+            } else {
+                for (auto &filename : illegalFileNames) {
+                    auto lower = toLowerCase(levelName);
+                    if (containsDot) {
+                        if (filename == lower.substr(0, dotPlacement)) {
+                            editor->levelnameError = true;
+                            break;
+                        } 
+                    } else {
+                        if (filename == lower) {
+                            editor->levelnameError = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            break;
+        } 
+        case EditorState::Export: {
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                editor->state = EditorState::Editing;
+            }
+
+            if (IsKeyPressed(KEY_ENTER)) {
+                if (exportWindowSelectedOption == 0) {
+                    if (levelName.size() > 0) {
+                        filename = levelName + "." + exporters[selectedExporter]->extension();
+                        saveLevel(editor, exporters[selectedExporter]);
+                    }
+                }
+                editor->state = EditorState::Editing;
+            }
+
+            if (IsKeyPressed(KEY_TAB) || IsKeyPressed(KEY_RIGHT)) {
+                if (exportWindowSelectedOption < 1) { // MOD?
+                    exportWindowSelectedOption += 1;
+                } else {
+                    exportWindowSelectedOption = 0;
+                }
+            } 
+
+            if (IsKeyPressed(KEY_LEFT)) {
+                if (exportWindowSelectedOption == 0) {
+                    exportWindowSelectedOption = 1;
+                } else {
+                    exportWindowSelectedOption -= 1;
+                }
+            }
+
+            if (IsKeyPressed(KEY_UP)) {
                 if (selectedExporter <= 0) {
                     selectedExporter = exporters.size()  - 1;
                 } else {
@@ -263,7 +320,7 @@ void control(Editor *editor, vector<Exporter*> exporters) {
                 }
             }
 
-            if (IsKeyPressed(KEY_PAGE_DOWN)) {
+            if (IsKeyPressed(KEY_DOWN)) {
                 if (selectedExporter >= (int) exporters.size() - 1) {
                     selectedExporter = 0;
                 } else {
@@ -302,7 +359,7 @@ void control(Editor *editor, vector<Exporter*> exporters) {
             }
 
             break;
-        } 
+        }
         case EditorState::EditKeyValue: {
             if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) {
                 editor->state = EditorState::ShowKeyValue;     
@@ -424,6 +481,10 @@ void control(Editor *editor, vector<Exporter*> exporters) {
         case EditorState::Editing: {
             if (IsKeyPressed(KEY_ESCAPE)) {
                 editor->state = EditorState::Closing;
+            }
+
+            if (IsKeyPressed(KEY_M)) {
+                editor->state = EditorState::Export;
             }
 
             if (IsKeyPressed(KEY_PAGE_UP)) {
@@ -625,7 +686,8 @@ void drawMenu(Editor *editor) {
         "[t] switch type",
         "[page/up] zoom",
         "[y] edit types",
-        "[v] key/values"
+        "[v] key/values",
+        "[m] export"
     };
 
     int ypos = 10;
@@ -705,7 +767,7 @@ void drawWindows(Editor *editor, vector<Exporter*> exporters) {
     int scale = FONT_SIZE/10;
     int yBase = 120+FONT_SIZE;
 
-    if (editor->state == EditorState::Closing) {
+    if (editor->state == EditorState::Export) {
         DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
         editor->drawText("Please enter a level name", {120, (float) yBase});
         editor->drawText(levelName, {130, (float) yBase+FONT_SIZE+FONT_SIZE/2});
@@ -715,19 +777,38 @@ void drawWindows(Editor *editor, vector<Exporter*> exporters) {
         DrawRectangleLines(120, yBase+FONT_SIZE*5, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
         editor->drawText(exporters[selectedExporter]->name(), {120+FONT_SIZE/2, (float)yBase+FONT_SIZE*5+FONT_SIZE/2});
 
-        editor->drawText("Save & Exit", {120+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
-        editor->drawText("Close without saving", {(float) 120+75*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
-        editor->drawText("Cancel", {(float) 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
+        editor->drawText("Export", {120+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
+        editor->drawText("Cancel", {(float) 120+75*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
 
-        switch(exitWindowSelectedOption) {
+        switch(exportWindowSelectedOption) {
             case 0:
                 DrawRectangleLines(120, yBase+FONT_SIZE*8, 75*scale, FONT_SIZE*2, BLACK);
                 break;
             case 1:
-                DrawRectangleLines(120 + 75 * scale + FONT_SIZE, yBase+FONT_SIZE*8, 120*scale, FONT_SIZE*2, BLACK);
+                DrawRectangleLines(120 + 75 * scale + FONT_SIZE, yBase+FONT_SIZE*8, 75*scale, FONT_SIZE*2, BLACK);
+                break;
+        }
+
+    } else if (editor->state == EditorState::Closing) {
+        DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
+        editor->drawText("Please enter a level name", {120, (float) yBase});
+        editor->drawText(levelName, {130, (float) yBase+FONT_SIZE+FONT_SIZE/2});
+        DrawRectangleLines(120, yBase+FONT_SIZE, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
+
+        int yOffset = 5;
+        editor->drawText("Save & Exit", {120+FONT_SIZE/2, (float) yBase+FONT_SIZE*yOffset+FONT_SIZE/2});
+        editor->drawText("Close without saving", {(float) 120+75*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*yOffset+FONT_SIZE/2});
+        editor->drawText("Cancel", {(float) 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*yOffset+FONT_SIZE/2});
+
+        switch(exitWindowSelectedOption) {
+            case 0:
+                DrawRectangleLines(120, yBase+FONT_SIZE*yOffset, 75*scale, FONT_SIZE*2, BLACK);
+                break;
+            case 1:
+                DrawRectangleLines(120 + 75 * scale + FONT_SIZE, yBase+FONT_SIZE*yOffset, 120*scale, FONT_SIZE*2, BLACK);
                 break;
             case 2:
-                DrawRectangleLines(120 + 75 * scale + FONT_SIZE + 120 * scale + FONT_SIZE, yBase + FONT_SIZE * 8, 60 * scale, FONT_SIZE * 2, BLACK);
+                DrawRectangleLines(120 + 75 * scale + FONT_SIZE + 120 * scale + FONT_SIZE, yBase + FONT_SIZE * yOffset, 60 * scale, FONT_SIZE * 2, BLACK);
                 break;
         }
 
