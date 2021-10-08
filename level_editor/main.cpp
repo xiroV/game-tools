@@ -592,18 +592,15 @@ void drawMenu(Editor *editor) {
 }
 
 void drawObjects(Camera2D *camera, Editor *editor) {
-    for (unsigned int i = 0; i < editor->objects.size(); i++) {
+    /* for (unsigned int i = 0; i < editor->objects.size(); i++) {
         auto &object = editor->objects[i];
         if (object.width == 0 && object.height == 0) {
             DrawCircle(object.x, object.y, 5, objectTypeColor(object.type));
-        } else if (object.width == 0) {
-            DrawRectanglePro(Rectangle {object.x, object.y, 1, object.height}, Vector2 {object.width / 2, object.height / 2}, object.rotation, objectTypeColor(object.type));
-        } else if (object.height == 0) {
-            DrawRectanglePro(Rectangle {object.x, object.y, object.width, 1}, Vector2 {object.width / 2, object.height / 2}, object.rotation, objectTypeColor(object.type));
         } else {
-            DrawRectanglePro(Rectangle {object.x, object.y, object.width, object.height}, Vector2 {object.width / 2, object.height / 2}, object.rotation, objectTypeColor(object.type));
+            DrawRectanglePro(
+                Rectangle {(float)object.x, (float)object.y, (float)object.width, object.height}, Vector2 {object.width / 2, object.height / 2}, object.rotation, objectTypeColor(object.type));
         }
-    }
+    } */
 
     if (isElementSelected(editor)) {
         auto &selectedObject = editor->objects[editor->selectedObject];
@@ -647,10 +644,21 @@ void drawObjects(Camera2D *camera, Editor *editor) {
             );
         } else {
             // TODO: Rotate selected x, y
-            DrawLineEx(Vector2{(float) selectedObject.x, (float) selectedObject.y}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y}, 2, GREEN);
-            DrawLineEx(Vector2{(float) selectedObject.x, (float) selectedObject.y}, Vector2 {selectedObject.x, selectedObject.y + selectedObject.height}, 2, GREEN);
-            DrawLineEx(Vector2{(float) selectedObject.x + selectedObject.width, selectedObject.y}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y +  selectedObject.height}, 2, GREEN);
-            DrawLineEx(Vector2{(float) selectedObject.x, selectedObject.y + selectedObject.height}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y +  selectedObject.height}, 2, GREEN);
+            static float rotation = 90;
+
+            rotation += GetFrameTime() * 20;
+            DrawRectangle(selectedObject.x, selectedObject.y, selectedObject.width, selectedObject.height, GREEN);
+            DrawRectanglePro(
+                Rectangle {(float)selectedObject.x + selectedObject.width / 2.0f,(float)selectedObject.y + selectedObject.height / 2.0f,(float)selectedObject.width,(float)selectedObject.height},
+                Vector2 {(float)selectedObject.width / 2.0f, (float) selectedObject.height / 2.0f},
+                rotation,
+                RED
+            );
+
+            // DrawLineEx(Vector2{(float) selectedObject.x, (float) selectedObject.y}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y}, 2, GREEN);
+            // DrawLineEx(Vector2{(float) selectedObject.x, (float) selectedObject.y}, Vector2 {selectedObject.x, selectedObject.y + selectedObject.height}, 2, GREEN);
+            // DrawLineEx(Vector2{(float) selectedObject.x + selectedObject.width, selectedObject.y}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y +  selectedObject.height}, 2, GREEN);
+            // DrawLineEx(Vector2{(float) selectedObject.x, selectedObject.y + selectedObject.height}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y +  selectedObject.height}, 2, GREEN);
         }
     }
 }
