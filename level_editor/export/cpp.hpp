@@ -7,7 +7,7 @@
 struct CppExporter : Exporter {
     CppExporter() {
         setName("C++");
-        setExtension("cpp");
+        setExtension("hpp");
     }
 
     std::string generate(Editor* editor) {
@@ -17,31 +17,30 @@ struct CppExporter : Exporter {
         output << endl;
         output << "#include <string>" << endl;
         output << "#include <vector>" << endl;
+        output << "#include \"level_data.hpp\"" << endl;
         output << endl;
 
-        output << "struct Object {" << endl
-            << "    int x, y, width, height;" << endl
-            << "    std::string type;" << endl
-            << "};" << endl
-        << endl;
+        output << "struct " << editor->levelName <<  " : LevelData {"<< endl
+            << "    std::vector<LevelObject> objects;" << endl;
 
-        output << "struct " << editor->levelName <<  " {"<< endl
-            << "    std::vector<Object> objects;" << endl;
-
-            output << "    " << editor->levelName << "() {" << endl;
+            output << "    void init() override {" << endl;
             output << "        objects = {" << endl;
 
-            for (unsigned int i = 0; i < editor->objects.size(); i++) {
+            for (Object const& obj : editor->objects) {
                 output << "            {"
-                    << editor->objects[i].x << ", "
-                    << editor->objects[i].y << ", "
-                    << editor->objects[i].width << ", "
-                    << editor->objects[i].height << ", "
-                    << "\"" << editor->objectTypes[editor->objects[i].type].name << "\""
+                    << obj.x << ", "
+                    << obj.y << ", "
+                    << obj.width << ", "
+                    << obj.height << ", "
+                    << "\"" << editor->objectTypes[obj.type].name << "\""
                 << "}," << endl;
             }
             output << "        };" << endl
-            << "    };" << endl
+            << "    };" << endl << endl;
+
+            output << "    std::vector<LevelObject> &getObjects() override {" << endl
+            << "        return objects;" << endl
+            << "    }" << endl
             << "};" << endl
         << endl;
 

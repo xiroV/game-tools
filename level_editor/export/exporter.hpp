@@ -6,6 +6,7 @@
 
 struct Exporter {
     virtual std::string generate(Editor* editor) = 0;
+    virtual ~Exporter() = default;
 
     void setName(std::string name) {
         this->name = name;
