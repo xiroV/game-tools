@@ -56,23 +56,12 @@ string illegalFileNames[] = {
 };
 
 string filename = "";
-string levelName = "";
 
 void Editor::drawText(string text, Vector2 position, Color color) {
     DrawTextEx(this->defaultFont, text.c_str(), position, FONT_SIZE, 0, color);
 }
 
 int selectedExporter = 0;
-
-struct ObjectType {
-    string name;
-    Color color;
-};
-
-vector<ObjectType> objectTypes = {
-    {"Block", RED},
-    {"Spawn", BLUE}
-};
 
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
 
@@ -82,21 +71,6 @@ void saveLevel(Editor *editor, Exporter* exporter) {
 
     if (levelFile.is_open()) {
         levelFile << exporter->generate(editor);
-        /*
-        levelFile << "#version " << editor->version << endl;
-        for (unsigned int i = 0; i < editor->objects.size(); i++) {
-            levelFile << editor->objects[i].x << editor->outputDelimiter << editor->objects[i].y <<
-                editor->outputDelimiter << editor->objects[i].width << editor->outputDelimiter << editor->objects[i].height << editor->outputDelimiter << editor->objects[i].type << editor->outputDelimiter;
-                for (auto &pair : editor->objects[i].data) {
-                    // Should also handle multiple empty spaces as invalid.
-                    if (pair.key.length() != 0) {
-                        levelFile << pair.key << "=" << pair.value << editor->outputDelimiter;
-                    }
-                }
-
-                levelFile << endl;
-        }
-        */
     } else {
         cout << "Unable to open file " << filename << endl;
     }
@@ -118,6 +92,7 @@ void loadLevel(Editor *editor) {
     string fileLine;
     ifstream levelFile;
     levelFile.open(filename);
+    editor->objectTypes = {};
 
     if (levelFile.is_open()) {
         
@@ -138,13 +113,34 @@ void loadLevel(Editor *editor) {
             istringstream line(fileLine);
 
             int objectFieldCount = 0;
-            while (objectFieldCount < 5 && getline(line, element, editor->outputDelimiter)) {
+            while (objectFieldCount < 4 && getline(line, element, editor->outputDelimiter)) {
                 lineElements.push_back(stoi(element));
                 objectFieldCount++;
             }
 
-            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4]}  ;
+            getline(line, element, editor->outputDelimiter);
+            string typeName = element;
+            int typeId = -1;
+            for (unsigned int i = 0; i < editor->objectTypes.size(); i++) {
+                if (editor->objectTypes[i].name == typeName) {
+                    typeId = i;
+                }
+            }
 
+            Color color = (Color) {
+                static_cast<unsigned char>(GetRandomValue(0,255)),
+                static_cast<unsigned char>(GetRandomValue(0, 255)),
+                static_cast<unsigned char>(GetRandomValue(0,255)),
+                255
+            }; 
+
+            if (typeId < 0) {
+                editor->objectTypes.push_back((ObjectType){typeName, color});
+                typeId = editor->objectTypes.size() - 1;
+            }
+
+            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], typeId};
+            
             while (getline(line, element, editor->outputDelimiter)) {
                 istringstream keyValuePair = istringstream(element);
                 string key;
@@ -221,8 +217,8 @@ void control(Editor *editor, vector<Exporter*> exporters) {
 
             if (IsKeyPressed(KEY_ENTER)) {
                 if (exitWindowSelectedOption == 0) {
-                    if (levelName.size() > 0) {
-                        filename = levelName + "." + exporters[0]->extension();
+                    if (editor->levelName.size() > 0) {
+                        filename = editor->levelName + "." + exporters[0]->getExtension();
                         saveLevel(editor, exporters[0]);
                         closeEditor = true;
                     }
@@ -249,12 +245,12 @@ void control(Editor *editor, vector<Exporter*> exporters) {
                 }
             }
 
-            updateStringByCharInput(levelName, 60, illegalPathCharacters);
+            updateStringByCharInput(editor->levelName, 60, illegalPathCharacters);
             
             editor->levelnameError = false;
             bool containsDot = false;
             int dotPlacement = -1;
-            for (auto &ch : levelName) {
+            for (auto &ch : editor->levelName) {
                 bool containsDot = anyMatch(ch, dotList);
                 dotPlacement++;
                 if (containsDot) break;
@@ -264,7 +260,7 @@ void control(Editor *editor, vector<Exporter*> exporters) {
                 editor->levelnameError = true;
             } else {
                 for (auto &filename : illegalFileNames) {
-                    auto lower = toLowerCase(levelName);
+                    auto lower = toLowerCase(editor->levelName);
                     if (containsDot) {
                         if (filename == lower.substr(0, dotPlacement)) {
                             editor->levelnameError = true;
@@ -288,8 +284,8 @@ void control(Editor *editor, vector<Exporter*> exporters) {
 
             if (IsKeyPressed(KEY_ENTER)) {
                 if (exportWindowSelectedOption == 0) {
-                    if (levelName.size() > 0) {
-                        filename = levelName + "." + exporters[selectedExporter]->extension();
+                    if (editor->levelName.size() > 0) {
+                        filename = editor->levelName + "." + exporters[selectedExporter]->getExtension();
                         saveLevel(editor, exporters[selectedExporter]);
                     }
                 }
@@ -328,12 +324,12 @@ void control(Editor *editor, vector<Exporter*> exporters) {
                 }
             }
 
-            updateStringByCharInput(levelName, 60, illegalPathCharacters);
+            updateStringByCharInput(editor->levelName, 60, illegalPathCharacters);
             
             editor->levelnameError = false;
             bool containsDot = false;
             int dotPlacement = -1;
-            for (auto &ch : levelName) {
+            for (auto &ch : editor->levelName) {
                 bool containsDot = anyMatch(ch, dotList);
                 dotPlacement++;
                 if (containsDot) break;
@@ -343,7 +339,7 @@ void control(Editor *editor, vector<Exporter*> exporters) {
                 editor->levelnameError = true;
             } else {
                 for (auto &filename : illegalFileNames) {
-                    auto lower = toLowerCase(levelName);
+                    auto lower = toLowerCase(editor->levelName);
                     if (containsDot) {
                         if (filename == lower.substr(0, dotPlacement)) {
                             editor->levelnameError = true;
@@ -426,20 +422,20 @@ void control(Editor *editor, vector<Exporter*> exporters) {
             }
 
             if (IsKeyPressed(KEY_DOWN)) {
-                ++editor->editBlockTypeIndex %= objectTypes.size();
+                ++editor->editBlockTypeIndex %= editor->objectTypes.size();
             }
 
             if (IsKeyPressed(KEY_UP)) {
-                --editor->editBlockTypeIndex %= objectTypes.size();
+                --editor->editBlockTypeIndex %= editor->objectTypes.size();
             }
 
             if (IsKeyPressed(KEY_N)) {
-                objectTypes.push_back({"", BLUE});
+                editor->objectTypes.push_back({"", BLUE});
             }
 
             if (IsKeyPressed(KEY_DELETE)) {
-                if (objectTypes.size() > 1) {
-                    objectTypes.erase(objectTypes.begin() + editor->editBlockTypeIndex);
+                if (editor->objectTypes.size() > 1) {
+                    editor->objectTypes.erase(editor->objectTypes.begin() + editor->editBlockTypeIndex);
                     editor->editBlockTypeIndex = 0;
                 }
             }
@@ -462,7 +458,7 @@ void control(Editor *editor, vector<Exporter*> exporters) {
                     }
                 } 
 
-                ObjectType &current = objectTypes[editor->editBlockTypeIndex];
+                ObjectType &current = editor->objectTypes[editor->editBlockTypeIndex];
                 if (editor->objectTypeParameter == ObjectTypeParameter::Name) {
                     updateStringByCharInput(current.name, 30, illegalPathCharacters);
                 } else {
@@ -571,7 +567,7 @@ void control(Editor *editor, vector<Exporter*> exporters) {
 
                 // CHANGE TYPE
                 if (IsKeyPressed(KEY_T)) {
-                    if (editor->objects[editor->selectedObject].type+1 >= (int) objectTypes.size()) {
+                    if (editor->objects[editor->selectedObject].type+1 >= (int) editor->objectTypes.size()) {
                         editor->objects[editor->selectedObject].type = 0;
                     } else {
                         editor->objects[editor->selectedObject].type += 1;
@@ -648,7 +644,7 @@ void drawBlockTypeEditor(Editor *editor) {
 
     int offsetY = 40;
     int currentIndex = 0;
-    for (auto &blockType: objectTypes) {
+    for (auto &blockType: editor->objectTypes) {
         editor->drawText(blockType.name, {15, (float) offsetY}, WHITE);
         DrawRectangle(15 + WINDOW_WIDTH / 2, offsetY, 100, 20, blockType.color);
 
@@ -698,9 +694,9 @@ void drawMenu(Editor *editor) {
 
     if (isElementSelected(editor)) {
         editor->drawText(
-            objectTypes[editor->objects[editor->selectedObject].type].name,
+            editor->objectTypes[editor->objects[editor->selectedObject].type].name,
             { 20, WINDOW_HEIGHT - 30},
-            objectTypes[editor->objects[editor->selectedObject].type].color
+            editor->objectTypes[editor->objects[editor->selectedObject].type].color
         );
     }
 }
@@ -708,13 +704,13 @@ void drawMenu(Editor *editor) {
 void drawObjects(Camera2D *camera, Editor *editor) {
     for (unsigned int i = 0; i < editor->objects.size(); i++) {
         if (editor->objects[i].width == 0 && editor->objects[i].height == 0) {
-            DrawCircle(editor->objects[i].x, editor->objects[i].y, 5, objectTypes[editor->objects[i].type].color);
+            DrawCircle(editor->objects[i].x, editor->objects[i].y, 5, editor->objectTypes[editor->objects[i].type].color);
         } else if (editor->objects[i].width == 0) {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, 1, editor->objects[i].height, objectTypes[editor->objects[i].type].color);
+            DrawRectangle(editor->objects[i].x, editor->objects[i].y, 1, editor->objects[i].height, editor->objectTypes[editor->objects[i].type].color);
         } else if (editor->objects[i].height == 0) {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, 1, objectTypes[editor->objects[i].type].color);
+            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, 1, editor->objectTypes[editor->objects[i].type].color);
         } else {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, editor->objects[i].height, objectTypes[editor->objects[i].type].color);
+            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, editor->objects[i].height, editor->objectTypes[editor->objects[i].type].color);
         }
     }
 
@@ -770,12 +766,12 @@ void drawWindows(Editor *editor, vector<Exporter*> exporters) {
     if (editor->state == EditorState::Export) {
         DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
         editor->drawText("Please enter a level name", {120, (float) yBase});
-        editor->drawText(levelName, {130, (float) yBase+FONT_SIZE+FONT_SIZE/2});
+        editor->drawText(editor->levelName, {130, (float) yBase+FONT_SIZE+FONT_SIZE/2});
         DrawRectangleLines(120, yBase+FONT_SIZE, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
 
         editor->drawText("Export type", {120, (float)yBase+FONT_SIZE*4});
         DrawRectangleLines(120, yBase+FONT_SIZE*5, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
-        editor->drawText(exporters[selectedExporter]->name(), {120+FONT_SIZE/2, (float)yBase+FONT_SIZE*5+FONT_SIZE/2});
+        editor->drawText(exporters[selectedExporter]->getName(), {120+FONT_SIZE/2, (float)yBase+FONT_SIZE*5+FONT_SIZE/2});
 
         editor->drawText("Export", {120+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
         editor->drawText("Cancel", {(float) 120+75*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
@@ -792,7 +788,7 @@ void drawWindows(Editor *editor, vector<Exporter*> exporters) {
     } else if (editor->state == EditorState::Closing) {
         DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
         editor->drawText("Please enter a level name", {120, (float) yBase});
-        editor->drawText(levelName, {130, (float) yBase+FONT_SIZE+FONT_SIZE/2});
+        editor->drawText(editor->levelName, {130, (float) yBase+FONT_SIZE+FONT_SIZE/2});
         DrawRectangleLines(120, yBase+FONT_SIZE, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
 
         int yOffset = 5;

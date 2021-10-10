@@ -5,9 +5,27 @@
 #include "../editor.hpp"
 
 struct Exporter {
-    virtual std::string name() = 0;
-    virtual std::string extension() = 0;
     virtual std::string generate(Editor* editor) = 0;
+
+    void setName(std::string name) {
+        this->name = name;
+    };
+
+    std::string getName() {
+        return name;
+    };
+
+    void setExtension(std::string extension) {
+        this->extension = extension;
+    };
+
+    std::string getExtension() {
+        return extension;
+    };
+
+    private:
+        std::string name;
+        std::string extension;
 };
 
 #endif

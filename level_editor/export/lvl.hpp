@@ -5,13 +5,9 @@
 #include <sstream>
 
 struct LvlExporter : Exporter {
-
-    std::string name() {
-        return "LVL (default)";
-    }
-
-    std::string extension() {
-        return "lvl";
+    LvlExporter() {
+        setName("Lvl (default)");
+        setExtension("lvl");
     }
 
     std::string generate(Editor* editor) {
@@ -20,7 +16,7 @@ struct LvlExporter : Exporter {
         output << "#version " << editor->version << endl;
         for (unsigned int i = 0; i < editor->objects.size(); i++) {
             output << editor->objects[i].x << editor->outputDelimiter << editor->objects[i].y <<
-                editor->outputDelimiter << editor->objects[i].width << editor->outputDelimiter << editor->objects[i].height << editor->outputDelimiter << editor->objects[i].type << editor->outputDelimiter;
+                editor->outputDelimiter << editor->objects[i].width << editor->outputDelimiter << editor->objects[i].height << editor->outputDelimiter << editor->objectTypes[editor->objects[i].type].name << editor->outputDelimiter;
                 for (auto &pair : editor->objects[i].data) {
                     // Should also handle multiple empty spaces as invalid.
                     if (pair.key.length() != 0) {

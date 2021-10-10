@@ -7,6 +7,11 @@
 
 using namespace std;
 
+struct ObjectType {
+    string name;
+    Color color;
+};
+
 enum class KeyOrValue {
     Key,
     Value
@@ -50,6 +55,11 @@ struct Editor {
     int version;
     bool levelnameError;
     Font defaultFont;
+    string levelName;
+    vector<ObjectType> objectTypes = {
+        {"Block", RED},
+        {"Spawn", BLUE}
+    };
 
     void drawText(string text, Vector2 position, Color color = BLACK);
 };
