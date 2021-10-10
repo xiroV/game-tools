@@ -6,9 +6,15 @@
 
 #ifndef __LEVEL_OBJECT__
 #define __LEVEL_OBJECT__
+struct ObjectData {
+    std::string key;
+    std::string value;
+};
+
 struct LevelObject {
     int x, y, width, height;
     std::string type;
+    std::vector<ObjectData> data;
 };
 #endif
 

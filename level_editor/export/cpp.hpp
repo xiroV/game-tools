@@ -32,8 +32,13 @@ struct CppExporter : Exporter {
                     << obj.y << ", "
                     << obj.width << ", "
                     << obj.height << ", "
-                    << "\"" << editor->objectTypes[obj.type].name << "\""
-                << "}," << endl;
+                    << "\"" << editor->objectTypes[obj.type].name << "\","
+                    << "{";
+                for (ObjectData const& keyValuePair : obj.data) {
+                    output << "{\"" << keyValuePair.key << "\", \"" << keyValuePair.value << "\"},";
+                }
+                output << "}";
+                output << "}," << endl;
             }
             output << "        };" << endl
             << "    };" << endl << endl;
