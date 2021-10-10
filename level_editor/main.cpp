@@ -821,12 +821,7 @@ int main(int argc, char **argv) {
     Font fontDefault = LoadFontEx("assets/fonts/OverpassMono/OverpassMono-Regular.ttf", FONT_SIZE, 0, 0);
     SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
 
-    Camera2D camera = {};
-    camera.target = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
-    camera.offset = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
-    camera.rotation = 0.0f;
-    camera.zoom = 1.0f;
-
+    
     CppExporter cppExport;
     LvlExporter lvlExport;
 
@@ -848,6 +843,16 @@ int main(int argc, char **argv) {
     if (argc > 1) {
         filename = argv[1];
         loadLevel(&editor);
+    }
+
+    Camera2D camera = {};
+    camera.target = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
+    camera.offset = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f;
+
+    if (editor.objects.size() > 0) {
+        cameraTarget = {(float) editor.objects[0].x, (float) editor.objects[0].y};
     }
 
     while (!closeEditor) {
