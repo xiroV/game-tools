@@ -57,7 +57,6 @@ string illegalFileNames[] = {
 
 string filename = "";
 string levelName = "";
-char inputLevelName[64];
 
 void Editor::drawText(string text, Vector2 position, Color color) {
     DrawTextEx(this->defaultFont, text.c_str(), position, FONT_SIZE, 0, color);
@@ -301,12 +300,40 @@ void control(Editor *editor) {
 
             break;
         } 
-        case EditorState::EditKeyValue: {
-            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) {
-                editor->state = EditorState::ShowKeyValue;     
+        case EditorState::KeyValueEditor: {
+            if (IsKeyPressed(KEY_N) && editor->editKeyValueIndex < 0) {
+                editor->objects[editor->selectedObject].data.push_back({"", ""});
+            } else if (IsKeyPressed(KEY_DELETE)) {
+                if (
+                    editor->editKeyValueIndex >= 0 ||
+                    editor->editKeyValueIndex < editor->objects[editor->selectedObject].data.size()
+                ) {
+                    editor->objects[editor->selectedObject].data.erase(editor->objects[editor->selectedObject].data.begin() + editor->editKeyValueIndex);
+                    editor->editKeyValueIndex = -1;
+                }
+            } else if (IsKeyPressed(KEY_ESCAPE)) {
+                if (editor->editKeyValueIndex >= 0) {
+                    editor->editKeyValueIndex = -1;
+                } else {
+                    editor->state = EditorState::Editing;
+                }
+            } else if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_TAB)) {
+                if (editor->editKeyValueIndex < 0) {
+                    editor->editKeyValueIndex += 1;
+                } else {
+                    if (editor->keyOrValue == KeyOrValue::Key) {
+                        editor->keyOrValue = KeyOrValue::Value;
+                    } else {
+                        editor->keyOrValue = KeyOrValue::Key;
+                        if (editor->editKeyValueIndex >= (int) editor->objects[editor->selectedObject].data.size() - 1) {
+                            editor->editKeyValueIndex = -1;
+                        } else {
+                            editor->editKeyValueIndex += 1;
+                        }
+                    }
+                }
             } else {
                 if (
-                    IsKeyPressed(KEY_TAB) ||
                     (editor->keyOrValue == KeyOrValue::Key && IsKeyPressed(KEY_RIGHT)) ||
                     (editor->keyOrValue == KeyOrValue::Value && IsKeyPressed(KEY_LEFT))
                 ) {
@@ -323,38 +350,6 @@ void control(Editor *editor) {
                 // Ah, geez end
                 updateStringByCharInput(data, 30, illegalPathCharacters);
             }
-            break;
-        }
-        case EditorState::ShowKeyValue: {
-            if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_V)) {
-                editor->state = EditorState::Editing;
-            }
-
-            if (IsKeyPressed(KEY_ENTER)) {
-                if (editor->objects[editor->selectedObject].data.size() > 0) {
-                    editor->state = EditorState::EditKeyValue;
-                }
-            }
-
-            if (IsKeyPressed(KEY_DOWN)) {
-                ++editor->editKeyValueIndex %= editor->objects[editor->selectedObject].data.size();
-            }
-
-            if (IsKeyPressed(KEY_UP)) {
-                --editor->editKeyValueIndex %= editor->objects[editor->selectedObject].data.size();
-            }
-
-            if (IsKeyPressed(KEY_N)) {
-                editor->objects[editor->selectedObject].data.push_back({"key", "value"});
-            }
-
-            if (IsKeyPressed(KEY_DELETE)) {
-                if (editor->objects[editor->selectedObject].data.size() > 0) {
-                    editor->objects[editor->selectedObject].data.erase(editor->objects[editor->selectedObject].data.begin() + editor->editKeyValueIndex);
-                    editor->editKeyValueIndex = 0;
-                }
-            }
-
             break;
         }
         case EditorState::ShowBlockTypes: {
@@ -517,7 +512,7 @@ void control(Editor *editor) {
 
                 // OPEN KEY VALUE WINDOW
                 if (IsKeyPressed(KEY_V)) {
-                    editor->state = EditorState::ShowKeyValue;
+                    editor->state = EditorState::KeyValueEditor;
                 }
 
              } else {
@@ -545,37 +540,41 @@ void control(Editor *editor) {
 }
 
 void drawKeyValueList(Editor *editor) {
-    if (editor->selectedObject == -1 || (editor->state != EditorState::ShowKeyValue && editor->state != EditorState::EditKeyValue)) return;
-    DrawRectangle(5, 5, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, GRAY);
-    editor->drawText("[n] for new Key Value Pair", {WINDOW_WIDTH - 280, 10}, WHITE);
+    if (editor->selectedObject == -1 || editor->state != EditorState::KeyValueEditor) return;
+
+    if(GuiWindowBox({100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200}, "Key/Value Editor")) {
+        editor->state = EditorState::Editing; 
+    }
+    
+    GuiDrawText("[n] for new key/value pair, [del] to delete", {WINDOW_WIDTH - 550, 100, 200, 100}, 0, BLACK);
     Object &element = editor->objects[editor->selectedObject];
 
-    int offsetY = 40;
+
+    int offsetY = 200;
     int currentIndex = 0;
+    bool editing;
+
     for (auto &entry : element.data) {
-        editor->drawText(entry.key, {15, (float) offsetY}, WHITE);
-        editor->drawText(entry.value, {15 + WINDOW_WIDTH / 2, (float) offsetY}, WHITE);
+        editing = false;
 
         if (currentIndex == editor->editKeyValueIndex) {
-            if (editor->state == EditorState::EditKeyValue) {
-                switch (editor->keyOrValue) {
-                    case KeyOrValue::Key: {
-                        DrawRectangleLines(10, offsetY, (WINDOW_WIDTH - 30) / 2, FONT_SIZE, YELLOW);
-                        break;
-                    }
-                    case KeyOrValue::Value: {
-                        DrawRectangleLines(10 + WINDOW_WIDTH / 2, offsetY, (WINDOW_WIDTH - 30) / 2, FONT_SIZE, YELLOW);
-                        break;
-                    }
-                }
-            } else {
-                DrawRectangleLines(10, offsetY, WINDOW_WIDTH - 30, FONT_SIZE, YELLOW);
-            }
+            editing = true;
+        }
+    
+        if (GuiTextBox({130, (float) offsetY, WINDOW_WIDTH / 2 - 130, FONT_SIZE*2}, const_cast<char*>(entry.key.c_str()), 64, editing && editor->keyOrValue == KeyOrValue::Key)) {
+            editor->editKeyValueIndex = currentIndex;
+            editor->keyOrValue = KeyOrValue::Key;
         }
 
-        offsetY += FONT_SIZE + 4;
+        if (GuiTextBox({WINDOW_WIDTH / 2 + 30, (float) offsetY, WINDOW_WIDTH / 2 - 160, FONT_SIZE*2}, const_cast<char*>(entry.value.c_str()), 64, editing && editor->keyOrValue == KeyOrValue::Value)) {
+            editor->editKeyValueIndex = currentIndex;
+            editor->keyOrValue = KeyOrValue::Value;
+        }
+
+        offsetY += FONT_SIZE * 2 + 5;
         currentIndex++;
     }
+
 }
 
 void drawBlockTypeEditor(Editor *editor) {
@@ -704,35 +703,14 @@ void drawWindows(Editor *editor) {
     int yBase = 120+FONT_SIZE;
 
     if (editor->state == EditorState::Closing) {
-        /*DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
-        editor->drawText("Please enter a level name", {120, (float) yBase});
-        editor->drawText(levelName, {130, (float) yBase+FONT_SIZE*2+FONT_SIZE/2});
-        DrawRectangleLines(120, yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
-    
-        editor->drawText("Save & Exit", {120+FONT_SIZE/2, (float) yBase+FONT_SIZE*5+FONT_SIZE/2});
-        editor->drawText("Close without saving", {(float) 120+75*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*5+FONT_SIZE/2});
-        editor->drawText("Cancel", {(float) 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*5+FONT_SIZE/2});
-
-        switch(exitWindowSelectedOption) {
-            case 0:
-                DrawRectangleLines(120, yBase+FONT_SIZE*5, 75*scale, FONT_SIZE*2, BLACK);
-                break;
-            case 1:
-                DrawRectangleLines(120 + 75 * scale + FONT_SIZE, yBase+FONT_SIZE*5, 120*scale, FONT_SIZE*2, BLACK);
-                break;
-            case 2:
-                DrawRectangleLines(120 + 75 * scale + FONT_SIZE + 120 * scale + FONT_SIZE, yBase + FONT_SIZE * 5, 60 * scale, FONT_SIZE * 2, BLACK);
-                break;
-        }*/
         if(GuiWindowBox({100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200}, "Exit Level Editor")) {
             editor->state = EditorState::Editing; 
         }
 
         GuiLabel({120, (float) yBase, 500, FONT_SIZE*2}, "Level name");
-        copy(levelName.begin(), levelName.end(), inputLevelName);
 
         if (editor->levelnameError) { GuiSetState(GUI_STATE_DISABLED); } else {GuiSetState(GUI_STATE_NORMAL); }
-        GuiTextBox({120, (float)yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2}, inputLevelName, 64, true);
+        GuiTextBox({120, (float)yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2}, const_cast<char*>(levelName.c_str()), 64, true);
         GuiSetState(GUI_STATE_NORMAL);
 
         if(exitWindowSelectedOption == 0) GuiSetState(GUI_STATE_FOCUSED);
@@ -780,12 +758,15 @@ int main(int argc, char **argv) {
     editor.state = EditorState::Editing;
     editor.keyOrValue = KeyOrValue::Key;
     editor.selectedObject = -1;
-    editor.editKeyValueIndex = 0;
-    editor.editBlockTypeIndex = 0;
+    editor.editKeyValueIndex = -1;
+    editor.editBlockTypeIndex = -1;
     editor.defaultFont = fontDefault;
 
     if (argc > 1) {
         filename = argv[1];
+        loadLevel(&editor);
+    } else {
+        filename = "TestLevel1.lvl";
         loadLevel(&editor);
     }
 
@@ -815,7 +796,7 @@ int main(int argc, char **argv) {
             drawBlockTypeEditor(&editor);
         EndDrawing();
 
-        camera.zoom = 0;
+camera.zoom = 0;
     }
 
     CloseWindow();
