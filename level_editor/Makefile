@@ -4,7 +4,7 @@ ifeq ($(UNAME_S),Darwin)
     LIBS = -framework IOKit -framework Cocoa -framework OpenGL `pkg-config --libs --cflags raylib`
 else
     CC = g++
-    LIBS = -lraylib -lpthread -lrt -lm -ldl
+    LIBS = -Wl,--no-as-needed -fpic -lGL -lpthread -lrt -lm -ldl -lX11 lib/raylib/libraylib.a
 endif
 
 CFLAGS = -std=c++17 -Wall -Wswitch -Wunused-variable -Wmissing-braces

@@ -4,8 +4,11 @@
 #include <typeinfo>
 #include <vector>
 #include <fstream>
-#include <raylib.h>
 #include "editor.hpp"
+
+#define RAYGUI_IMPLEMENTATION
+#include "lib/raylib/src/raylib.h"
+#include "lib/raygui/src/raygui.h"
 
 using namespace std;
 
@@ -54,6 +57,7 @@ string illegalFileNames[] = {
 
 string filename = "";
 string levelName = "";
+char inputLevelName[64];
 
 void Editor::drawText(string text, Vector2 position, Color color) {
     DrawTextEx(this->defaultFont, text.c_str(), position, FONT_SIZE, 0, color);
@@ -700,7 +704,7 @@ void drawWindows(Editor *editor) {
     int yBase = 120+FONT_SIZE;
 
     if (editor->state == EditorState::Closing) {
-        DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
+        /*DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
         editor->drawText("Please enter a level name", {120, (float) yBase});
         editor->drawText(levelName, {130, (float) yBase+FONT_SIZE*2+FONT_SIZE/2});
         DrawRectangleLines(120, yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
@@ -719,8 +723,37 @@ void drawWindows(Editor *editor) {
             case 2:
                 DrawRectangleLines(120 + 75 * scale + FONT_SIZE + 120 * scale + FONT_SIZE, yBase + FONT_SIZE * 5, 60 * scale, FONT_SIZE * 2, BLACK);
                 break;
+        }*/
+        if(GuiWindowBox({100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200}, "Exit Level Editor")) {
+            editor->state = EditorState::Editing; 
         }
 
+        GuiLabel({120, (float) yBase, 500, FONT_SIZE*2}, "Level name");
+        copy(levelName.begin(), levelName.end(), inputLevelName);
+
+        if (editor->levelnameError) { GuiSetState(GUI_STATE_DISABLED); } else {GuiSetState(GUI_STATE_NORMAL); }
+        GuiTextBox({120, (float)yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2}, inputLevelName, 64, true);
+        GuiSetState(GUI_STATE_NORMAL);
+
+        if(exitWindowSelectedOption == 0) GuiSetState(GUI_STATE_FOCUSED);
+        if (GuiButton({120, (float) yBase+FONT_SIZE*5, (float) 75*scale, FONT_SIZE*2}, "Save & Exit")) {
+            filename = levelName + ".lvl";
+            saveLevel(editor);
+            closeEditor = true;
+        }
+        if(exitWindowSelectedOption == 0) GuiSetState(GUI_STATE_NORMAL);
+
+        if(exitWindowSelectedOption == 1) GuiSetState(GUI_STATE_FOCUSED);
+        if (GuiButton({(float) 120 + 75 * scale + FONT_SIZE, (float) yBase+FONT_SIZE*5, (float) 120*scale, FONT_SIZE*2}, "Close without saving")) {
+            closeEditor = true;
+        }
+        if(exitWindowSelectedOption == 1) GuiSetState(GUI_STATE_NORMAL);
+
+        if(exitWindowSelectedOption == 2) GuiSetState(GUI_STATE_FOCUSED);
+        if (GuiButton({(float) 120 + 75 * scale + FONT_SIZE + 120 * scale + FONT_SIZE, (float) yBase + FONT_SIZE * 5, (float) 60 * scale, FONT_SIZE * 2}, "Cancel")) {
+            editor->state = EditorState::Editing; 
+        }
+        if(exitWindowSelectedOption == 2) GuiSetState(GUI_STATE_NORMAL);
     }
 }
 
@@ -733,6 +766,7 @@ int main(int argc, char **argv) {
 
     Font fontDefault = LoadFontEx("assets/fonts/OverpassMono/OverpassMono-Regular.ttf", FONT_SIZE, 0, 0);
     SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
+    GuiSetFont(fontDefault);
 
     Camera2D camera = {};
     camera.target = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
