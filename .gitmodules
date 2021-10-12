@@ -1,3 +1,6 @@
 [submodule "level_editor/lib/raygui"]
 	path = level_editor/lib/raygui
 	url = git@github.com:raysan5/raygui.git
+[submodule "level_editor/lib/raylib"]
+	path = level_editor/lib/raylib
+	url = git@github.com:raysan5/raylib.git
