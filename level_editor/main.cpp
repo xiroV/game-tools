@@ -12,7 +12,7 @@ const int WINDOW_WIDTH = 1600;
 const int WINDOW_HEIGHT = 1000;
 const int FONT_SIZE = 20;
 const int MOVE_INTERVAL = 10;
-const int ROTATION_INTERVAL = 20;
+const int ROTATION_INTERVAL = 15;
 const int RESIZE_INTERVAL = 50;
 const int CAMERA_MOVE_SPEED = 5;
 
@@ -81,8 +81,7 @@ struct ObjectData {
 };
 
 struct Object {
-    int x, y, width, height, rotation;
-    int type;
+    int x, y, width, height, rotation, type;
     vector<ObjectData> data;
 };
 
@@ -134,7 +133,7 @@ void saveLevel(Editor *editor) {
         levelFile << "#version " << editor->version << endl;
         for (unsigned int i = 0; i < editor->objects.size(); i++) {
             levelFile << editor->objects[i].x << editor->outputDelimiter << editor->objects[i].y <<
-                editor->outputDelimiter << editor->objects[i].width << editor->outputDelimiter << editor->objects[i].height << editor->outputDelimiter << editor->objects[i].type << editor->outputDelimiter;
+                editor->outputDelimiter << editor->objects[i].width << editor->outputDelimiter << editor->objects[i].height << editor->outputDelimiter << editor->objects[i].rotation << editor->outputDelimiter << editor->objects[i].type << editor->outputDelimiter;
                 for (auto &pair : editor->objects[i].data) {
                     // Should also handle multiple empty spaces as invalid.
                     if (pair.key.length() != 0) {
@@ -196,12 +195,12 @@ void loadLevel(Editor *editor) {
             istringstream line(fileLine);
 
             int objectFieldCount = 0;
-            while (objectFieldCount < 5 && getline(line, element, editor->outputDelimiter)) {
+            while (objectFieldCount < 6 && getline(line, element, editor->outputDelimiter)) {
                 lineElements.push_back(stoi(element));
                 objectFieldCount++;
             }
 
-            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4]}  ;
+            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4], lineElements[5]}  ;
 
             while (getline(line, element, editor->outputDelimiter)) {
                 istringstream keyValuePair = istringstream(element);
@@ -561,6 +560,15 @@ void drawKeyValueList(Editor *editor) {
     }
 }
 
+void drawRect(float x, float y, float width, float height, float rotation, Color color) {
+     DrawRectanglePro(
+        Rectangle {x + width / 2.0f,y + height / 2.0f,width,height},
+        Vector2 {width / 2.0f,  height / 2.0f},
+        rotation,
+        color
+    );
+}
+
 void drawMenu(Editor *editor) {
     int xpos = WINDOW_WIDTH-FONT_SIZE*8;
 
@@ -592,16 +600,6 @@ void drawMenu(Editor *editor) {
 }
 
 void drawObjects(Camera2D *camera, Editor *editor) {
-    /* for (unsigned int i = 0; i < editor->objects.size(); i++) {
-        auto &object = editor->objects[i];
-        if (object.width == 0 && object.height == 0) {
-            DrawCircle(object.x, object.y, 5, objectTypeColor(object.type));
-        } else {
-            DrawRectanglePro(
-                Rectangle {(float)object.x, (float)object.y, (float)object.width, object.height}, Vector2 {object.width / 2, object.height / 2}, object.rotation, objectTypeColor(object.type));
-        }
-    } */
-
     if (isElementSelected(editor)) {
         auto &selectedObject = editor->objects[editor->selectedObject];
 
@@ -612,53 +610,16 @@ void drawObjects(Camera2D *camera, Editor *editor) {
                 5.0f,
                 GREEN
             );
-        } else if (selectedObject.width == 0) {
-            DrawRectanglePro(
-                Rectangle {
-                    (float) selectedObject.x,
-                    (float) selectedObject.y,
-                    (float) 1.0f,
-                    (float) selectedObject.height,
-                },
-                Vector2 {
-                    (float) selectedObject.width / 2,
-                    (float) selectedObject.height / 2 
-                },
-                selectedObject.rotation,
-                GREEN
-            );
-        } else if (selectedObject.height == 0) {
-            DrawRectanglePro(
-                Rectangle {
-                    (float) selectedObject.x,
-                    (float) selectedObject.y,
-                    (float) selectedObject.width,
-                    (float) 1.0,
-                },
-                Vector2 {
-                    (float) selectedObject.width / 2,
-                    (float) selectedObject.height / 2 
-                },
-                selectedObject.rotation,
-                GREEN
-            );
         } else {
-            // TODO: Rotate selected x, y
-            static float rotation = 90;
-
-            rotation += GetFrameTime() * 20;
-            DrawRectangle(selectedObject.x, selectedObject.y, selectedObject.width, selectedObject.height, GREEN);
-            DrawRectanglePro(
-                Rectangle {(float)selectedObject.x + selectedObject.width / 2.0f,(float)selectedObject.y + selectedObject.height / 2.0f,(float)selectedObject.width,(float)selectedObject.height},
-                Vector2 {(float)selectedObject.width / 2.0f, (float) selectedObject.height / 2.0f},
-                rotation,
-                RED
-            );
-
-            // DrawLineEx(Vector2{(float) selectedObject.x, (float) selectedObject.y}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y}, 2, GREEN);
-            // DrawLineEx(Vector2{(float) selectedObject.x, (float) selectedObject.y}, Vector2 {selectedObject.x, selectedObject.y + selectedObject.height}, 2, GREEN);
-            // DrawLineEx(Vector2{(float) selectedObject.x + selectedObject.width, selectedObject.y}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y +  selectedObject.height}, 2, GREEN);
-            // DrawLineEx(Vector2{(float) selectedObject.x, selectedObject.y + selectedObject.height}, Vector2 {selectedObject.x + selectedObject.width, selectedObject.y +  selectedObject.height}, 2, GREEN);
+            drawRect(selectedObject.x - 1, selectedObject.y - 1, selectedObject.width + 2, selectedObject.height + 2, selectedObject.rotation, GREEN);
+        }
+    }
+    for (unsigned int i = 0; i < editor->objects.size(); i++) {
+        auto &object = editor->objects[i];
+        if (object.width == 0 && object.height == 0) {
+            DrawCircle(object.x, object.y, 5, objectTypeColor(object.type));
+        } else {
+            drawRect(object.x, object.y, object.width == 0 ? 1.0f : object.width, object.height == 0 ? 1.0f : object.height, object.rotation, objectTypeColor(object.type));
         }
     }
 }
