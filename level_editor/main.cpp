@@ -64,8 +64,6 @@ void Editor::drawText(string text, Vector2 position, Color color) {
     DrawTextEx(this->defaultFont, text.c_str(), position, FONT_SIZE, 0, color);
 }
 
-int selectedExporter = 0;
-
 Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
 
 void saveLevel(Editor *editor, Exporter* exporter) {
@@ -288,8 +286,8 @@ void control(Editor *editor, vector<Exporter*> exporters) {
             if (IsKeyPressed(KEY_ENTER)) {
                 if (exportWindowSelectedOption == 0) {
                     if (editor->levelName.size() > 0) {
-                        filename = editor->levelName + "." + exporters[selectedExporter]->getExtension();
-                        saveLevel(editor, exporters[selectedExporter]);
+                        filename = editor->levelName + "." + exporters[editor->selectedExporter]->getExtension();
+                        saveLevel(editor, exporters[editor->selectedExporter]);
                     }
                 }
                 editor->state = EditorState::Editing;
@@ -312,18 +310,18 @@ void control(Editor *editor, vector<Exporter*> exporters) {
             }
 
             if (IsKeyPressed(KEY_UP)) {
-                if (selectedExporter <= 0) {
-                    selectedExporter = exporters.size()  - 1;
+                if (editor->selectedExporter <= 0) {
+                    editor->selectedExporter = exporters.size()  - 1;
                 } else {
-                    selectedExporter -= 1;
+                    editor->selectedExporter -= 1;
                 }
             }
 
             if (IsKeyPressed(KEY_DOWN)) {
-                if (selectedExporter >= (int) exporters.size() - 1) {
-                    selectedExporter = 0;
+                if (editor->selectedExporter >= (int) exporters.size() - 1) {
+                    editor->selectedExporter = 0;
                 } else {
-                    selectedExporter += 1;
+                    editor->selectedExporter += 1;
                 }
             }
 
@@ -774,9 +772,11 @@ void drawWindows(Editor *editor, vector<Exporter*> exporters) {
 
         if(exitWindowSelectedOption == 0) GuiSetState(GUI_STATE_FOCUSED);
         if (GuiButton({120, (float) yBase+FONT_SIZE*5, (float) 75*scale, FONT_SIZE*2}, "Save & Exit")) {
-            filename = editor->levelName + ".lvl";
-            saveLevel(editor, exporters[selectedExporter]);
-            closeEditor = true;
+            if (editor->levelName.size() > 0) {
+                filename = editor->levelName + ".lvl";
+                saveLevel(editor, exporters[0]);
+                closeEditor = true;
+            }        
         }
         if(exitWindowSelectedOption == 0) GuiSetState(GUI_STATE_NORMAL);
 
@@ -793,26 +793,42 @@ void drawWindows(Editor *editor, vector<Exporter*> exporters) {
         if(exitWindowSelectedOption == 2) GuiSetState(GUI_STATE_NORMAL);
 
     } else if (editor->state == EditorState::Export) {
-        DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
-        editor->drawText("Please enter a level name", {120, (float) yBase});
-        editor->drawText(editor->levelName, {130, (float) yBase+FONT_SIZE+FONT_SIZE/2});
-        DrawRectangleLines(120, yBase+FONT_SIZE, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
-
-        editor->drawText("Export type", {120, (float)yBase+FONT_SIZE*4});
-        DrawRectangleLines(120, yBase+FONT_SIZE*5, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
-        editor->drawText(exporters[selectedExporter]->getName(), {120+FONT_SIZE/2, (float)yBase+FONT_SIZE*5+FONT_SIZE/2});
-
-        editor->drawText("Export", {120+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
-        editor->drawText("Cancel", {(float) 120+75*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
-
-        switch(exportWindowSelectedOption) {
-            case 0:
-                DrawRectangleLines(120, yBase+FONT_SIZE*8, 75*scale, FONT_SIZE*2, BLACK);
-                break;
-            case 1:
-                DrawRectangleLines(120 + 75 * scale + FONT_SIZE, yBase+FONT_SIZE*8, 75*scale, FONT_SIZE*2, BLACK);
-                break;
+        if(GuiWindowBox({100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200}, "Export Level")) {
+            editor->state = EditorState::Editing; 
         }
+
+        GuiLabel({120, (float) yBase, 500, FONT_SIZE*2}, "Level name");
+
+        if (editor->levelnameError) { GuiSetState(GUI_STATE_DISABLED); } else {GuiSetState(GUI_STATE_NORMAL); }
+        GuiTextBox({120, (float)yBase+FONT_SIZE*2, WINDOW_WIDTH-240, FONT_SIZE*2}, const_cast<char*>(editor->levelName.c_str()), 64, true);
+        GuiSetState(GUI_STATE_NORMAL);
+
+
+        GuiLabel({120, (float) yBase + FONT_SIZE * 4, 500, FONT_SIZE * 2}, "Export type");
+
+        string exportOptions;
+        for (auto &exporter : exporters) {
+            exportOptions.append(exporter->getName());
+            exportOptions.push_back(';');
+        }
+        exportOptions.pop_back();
+
+        editor->selectedExporter = GuiComboBox({120, (float) yBase+FONT_SIZE*6, WINDOW_WIDTH-240, FONT_SIZE*2}, const_cast<char*>(exportOptions.c_str()), editor->selectedExporter);
+
+        if(exportWindowSelectedOption == 0) GuiSetState(GUI_STATE_FOCUSED);
+        if (GuiButton({120, (float) yBase+FONT_SIZE*9, (float) 75*scale, FONT_SIZE*2}, "Export")) {
+            if (editor->levelName.size() > 0) {
+                filename = editor->levelName + "." + exporters[editor->selectedExporter]->getExtension();
+                saveLevel(editor, exporters[editor->selectedExporter]);
+            }
+        }
+        if(exportWindowSelectedOption == 0) GuiSetState(GUI_STATE_NORMAL);
+
+        if(exportWindowSelectedOption == 1) GuiSetState(GUI_STATE_FOCUSED);
+        if (GuiButton({(float) 120 + 75 * scale + FONT_SIZE, (float) yBase+FONT_SIZE*9, (float) 60*scale, FONT_SIZE*2}, "Cancel")) {
+            editor->state = EditorState::Editing;
+        }
+        if(exportWindowSelectedOption == 1) GuiSetState(GUI_STATE_NORMAL);
     }
 }
 
@@ -834,12 +850,13 @@ int main(int argc, char **argv) {
     Editor editor = {};
     editor.version = 1;
     editor.outputDelimiter = ';';
-    editor.state = EditorState::BlockTypeEditor;
+    editor.state = EditorState::Export;
     editor.keyOrValue = KeyOrValue::Key;
     editor.selectedObject = -1;
     editor.editKeyValueIndex = -1;
     editor.editBlockTypeIndex = -1;
     editor.defaultFont = fontDefault;
+    editor.selectedExporter = 0;
 
     vector<Exporter*> exporters = {
         &lvlExport,
@@ -890,7 +907,7 @@ int main(int argc, char **argv) {
             drawBlockTypeEditor(&editor);
         EndDrawing();
 
-camera.zoom = 0;
+        camera.zoom = 0;
     }
 
     CloseWindow();

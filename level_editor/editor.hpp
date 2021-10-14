@@ -58,6 +58,7 @@ struct Editor {
         {"Block", RED},
         {"Spawn", BLUE}
     };
+    int selectedExporter;
 
     void drawText(string text, Vector2 position, Color color = BLACK);
 };
