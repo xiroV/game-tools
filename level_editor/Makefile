@@ -1,7 +1,7 @@
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
     CC = clang++
-    LIBS = -framework IOKit -framework Cocoa -framework OpenGL `pkg-config --libs --cflags raylib`
+    LIBS = -framework IOKit -framework Cocoa -framework OpenGL lib/raylib/libraylib.a
 else
     CC = g++
     LIBS = -Wl,--no-as-needed -fpic -lGL -lpthread -lrt -lm -ldl -lX11 lib/raylib/libraylib.a
