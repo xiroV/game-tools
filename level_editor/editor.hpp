@@ -32,8 +32,7 @@ enum class EditorState {
     Editing,
     Closing,
     KeyValueEditor,
-    ShowBlockTypes,
-    EditBlockTypes
+    BlockTypeEditor
 };
 
 struct Editor {

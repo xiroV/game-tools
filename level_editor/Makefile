@@ -7,7 +7,7 @@ else
     LIBS = -Wl,--no-as-needed -fpic -lGL -lpthread -lrt -lm -ldl -lX11 lib/raylib/libraylib.a
 endif
 
-CFLAGS = -std=c++17 -Wall -Wswitch -Wunused-variable -Wmissing-braces
+CFLAGS = -std=c++17 -Wall -Wswitch -Wunused-variable -Wmissing-braces -Wno-enum-compare
 
 all:	editor	
 
