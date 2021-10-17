@@ -10,7 +10,7 @@ struct ExitWindow {
     Editor *editor;
     Exporter* exporter;
     int exitWindowSelectedOption = 0;
-    char levelName[64];
+    char levelName[64] = "";
 
     ExitWindow(Editor *editor, Exporter *exporter) {
         this->editor = editor;

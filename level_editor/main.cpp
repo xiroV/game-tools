@@ -14,6 +14,8 @@
 
 #include "window/export.hpp"
 #include "window/exit.hpp"
+#include "window/block_type_editor.hpp"
+#include "window/key_value_editor.hpp"
 
 using namespace std;
 
@@ -28,6 +30,8 @@ int exitWindowSelectedOption = 0;
 struct Windows {
     ExportWindow exportWindow;
     ExitWindow exitWindow;
+    BlockTypeEditorWindow blockTypeEditorWindow;
+    KeyValueEditorWindow keyValueEditorWindow;
 };
 
 char illegalPathCharacters[] = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}', 0};
@@ -207,110 +211,11 @@ void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
             break;
         }
         case EditorState::KeyValueEditor: {
-            if (IsKeyPressed(KEY_N) && editor->editKeyValueIndex < 0) {
-                editor->objects[editor->selectedObject].data.push_back({"", ""});
-            } 
-
-            if (IsKeyPressed(KEY_DELETE)) {
-                if (
-                    editor->editKeyValueIndex >= 0 ||
-                    editor->editKeyValueIndex < (int) editor->objects[editor->selectedObject].data.size()
-                ) {
-                    editor->objects[editor->selectedObject].data.erase(editor->objects[editor->selectedObject].data.begin() + editor->editKeyValueIndex);
-                    editor->editKeyValueIndex = -1;
-                }
-            } 
-
-            if (IsKeyPressed(KEY_ESCAPE)) {
-                if (editor->editKeyValueIndex < 0) {
-                    editor->editKeyValueIndex = -1;
-                    editor->state = EditorState::Editing;
-                } else {
-                    editor->editKeyValueIndex = -1;
-                }
-            } 
-
-            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_TAB)) {
-                if (editor->editKeyValueIndex < 0) {
-                    editor->editKeyValueIndex += 1;
-                } else {
-                    if (editor->keyOrValue == KeyOrValue::Key) {
-                        editor->keyOrValue = KeyOrValue::Value;
-                    } else {
-                        editor->keyOrValue = KeyOrValue::Key;
-                        if (editor->editKeyValueIndex >= (int) editor->objects[editor->selectedObject].data.size() - 1) {
-                            editor->editKeyValueIndex = -1;
-                        } else {
-                            editor->editKeyValueIndex += 1;
-                        }
-                    }
-                }
-            }
-
-            if (
-                (editor->keyOrValue == KeyOrValue::Key && IsKeyPressed(KEY_RIGHT)) ||
-                (editor->keyOrValue == KeyOrValue::Value && IsKeyPressed(KEY_LEFT))
-            ) {
-                if (editor->keyOrValue == KeyOrValue::Key) {
-                    editor->keyOrValue = KeyOrValue::Value;
-                } else {
-                    editor->keyOrValue = KeyOrValue::Key;
-                }
-            } 
-
-
-            if (editor->editKeyValueIndex >= 0) {
-                // Ah, geez
-                ObjectData &current = editor->objects[editor->selectedObject].data[editor->editKeyValueIndex];
-                string &data = editor->keyOrValue == KeyOrValue::Key ? current.key : current.value; 
-                // Ah, geez end
-                updateStringByCharInput(data, 30, illegalPathCharacters);
-            }
+            windows->keyValueEditorWindow.control();
             break;
         }
         case EditorState::BlockTypeEditor: {
-            if (IsKeyPressed(KEY_ESCAPE)) {
-                if (editor->editBlockTypeIndex < 0) {
-                    editor->editBlockTypeIndex = -1;
-                    editor->state = EditorState::Editing;
-                } else {
-                    editor->editBlockTypeIndex = -1;
-                }
-            }
-
-            if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_TAB)) {
-                ++editor->editBlockTypeIndex %= editor->objectTypes.size();
-            }
-
-            if (IsKeyPressed(KEY_UP)) {
-                --editor->editBlockTypeIndex %= editor->objectTypes.size();
-            }
-
-            if (IsKeyPressed(KEY_N)) {
-                editor->objectTypes.push_back({"", BLUE});
-            }
-
-            if (IsKeyPressed(KEY_DELETE)) {
-                if (editor->objectTypes.size() > 1) {
-                    editor->objectTypes.erase(editor->objectTypes.begin() + editor->editBlockTypeIndex);
-                    editor->editBlockTypeIndex = 0;
-                }
-            }
-
-            ObjectType &current = editor->objectTypes[editor->editBlockTypeIndex];
-            if (!editor->objectTypes.empty() && editor->editBlockTypeIndex >= 0) {
-                updateStringByCharInput(current.name, 30, illegalPathCharacters);
-
-                if (IsKeyPressed(KEY_END)) {
-                    current.color = (Color) {
-                        static_cast<unsigned char>(GetRandomValue(0,255)),
-                        static_cast<unsigned char>(GetRandomValue(0, 255)),
-                        static_cast<unsigned char>(GetRandomValue(0,255)),
-                        255
-                    }; 
-                }
-            }
-
+            windows->blockTypeEditorWindow.control();
             break;
         }
         case EditorState::Editing: {
@@ -442,80 +347,6 @@ void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
     }
 }
 
-void drawKeyValueList(Editor *editor) {
-    if (editor->selectedObject == -1 || editor->state != EditorState::KeyValueEditor) return;
-
-    if(GuiWindowBox({100, 100, (float) editor->windowWidth - 200, (float) editor->windowHeight - 200}, "Key/Value Editor")) {
-        editor->state = EditorState::Editing; 
-    }
-    
-    GuiDrawText("[n] for new key/value pair, [del] to delete", {(float) editor->windowWidth - 550, 100, 200, 100}, 0, BLACK);
-    Object &element = editor->objects[editor->selectedObject];
-
-
-    int offsetY = 200;
-    int currentIndex = 0;
-    bool editing;
-
-    for (auto &entry : element.data) {
-        editing = false;
-
-        if (currentIndex == editor->editKeyValueIndex) {
-            editing = true;
-        }
-    
-        if (GuiTextBox({130, (float) offsetY, (float) editor->windowWidth / 2 - 130, (float) editor->fontSize*2}, const_cast<char*>(entry.key.c_str()), 64, editing && editor->keyOrValue == KeyOrValue::Key)) {
-            editor->editKeyValueIndex = currentIndex;
-            editor->keyOrValue = KeyOrValue::Key;
-        }
-
-        if (GuiTextBox({editor->windowWidth / 2 + 30, (float) offsetY, editor->windowWidth / 2 - 160, (float) editor->fontSize*2}, const_cast<char*>(entry.value.c_str()), 64, editing && editor->keyOrValue == KeyOrValue::Value)) {
-            editor->editKeyValueIndex = currentIndex;
-            editor->keyOrValue = KeyOrValue::Value;
-        }
-
-        offsetY += editor->fontSize * 2 + 5;
-        currentIndex++;
-    }
-
-}
-
-void drawBlockTypeEditor(Editor *editor) {
-    if (editor->state != EditorState::BlockTypeEditor) return;
-
-    if(GuiWindowBox({100, 100, editor->windowWidth - 200, editor->windowHeight - 200}, "Block Type Editor")) {
-        editor->state = EditorState::Editing; 
-    }
-    
-    GuiDrawText("[n] for new block type, [del] to delete", {editor->windowWidth - 520, 100, 200, 100}, 0, BLACK);
-
-
-    int offsetY = 200;
-    int currentIndex = 0;
-    bool editing;
-
-    for (auto &blockType: editor->objectTypes) {
-        editing = false;
-
-        if (currentIndex == editor->editBlockTypeIndex) {
-            editing = true;
-        }
-    
-        if (GuiTextBox({130, (float) offsetY, editor->windowWidth / 2 - 130, (float) editor->fontSize*2}, const_cast<char*>(blockType.name.c_str()), 64, editing && editor->keyOrValue == KeyOrValue::Key)) {
-            editor->editBlockTypeIndex = currentIndex;
-        }
-
-        DrawRectangle(15 + editor->windowWidth / 2, offsetY, editor->fontSize*2, editor->fontSize*2, blockType.color);
-
-        if (editing) {
-            GuiDrawText("[end] change color", {10 + editor->windowWidth / 2 + 70, (float) offsetY, editor->windowWidth / 2 - 130, (float) editor->fontSize * 2}, 0, BLACK);
-        }
-
-        offsetY += editor->fontSize * 2 + 5;
-        currentIndex++;
-    }
-}
-
 void drawMenu(Editor *editor) {
     int xpos = editor->windowWidth-editor->fontSize*8;
 
@@ -614,6 +445,14 @@ void drawWindows(Editor *editor, Windows *windows, vector<Exporter*> exporters) 
             windows->exportWindow.draw();
             break;
         }
+        case EditorState::BlockTypeEditor: {
+            windows->blockTypeEditorWindow.draw();
+            break;
+        }
+        case EditorState::KeyValueEditor: {
+            windows->keyValueEditorWindow.draw();
+            break;
+        }
         default: {}
     }
 }
@@ -625,7 +464,7 @@ int main(int argc, char **argv) {
     Editor editor = {};
     editor.version = 1;
     editor.outputDelimiter = ';';
-    editor.state = EditorState::Export;
+    editor.state = EditorState::BlockTypeEditor;
     editor.keyOrValue = KeyOrValue::Key;
     editor.selectedObject = -1;
     editor.editKeyValueIndex = -1;
@@ -662,7 +501,9 @@ int main(int argc, char **argv) {
 
     Windows windows = {
         ExportWindow(&editor, exporters),
-        ExitWindow(&editor, exporters[0])
+        ExitWindow(&editor, exporters[0]),
+        BlockTypeEditorWindow(&editor),
+        KeyValueEditorWindow(&editor)
     };
 
     Camera2D camera = {};
@@ -697,8 +538,6 @@ int main(int argc, char **argv) {
             EndMode2D();
             drawMenu(&editor);
             drawWindows(&editor, &windows, exporters);
-            drawKeyValueList(&editor);
-            drawBlockTypeEditor(&editor);
         EndDrawing();
 
         camera.zoom = 0;

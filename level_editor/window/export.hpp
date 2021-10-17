@@ -10,7 +10,7 @@ struct ExportWindow {
     Editor *editor;
     vector<Exporter*> exporters;
     int exportWindowSelectedOption = 0;
-    char levelName[64];
+    char levelName[64] = "";
 
     ExportWindow(Editor *editor, vector<Exporter*> exporters) {
         this->editor = editor;
