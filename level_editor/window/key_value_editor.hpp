@@ -9,6 +9,9 @@
 struct KeyValueEditorWindow {
     Editor *editor;
     int editIndex = -1;
+    vector<char*> keys;
+    vector<char*> values;
+    bool loaded = false;
 
     KeyValueEditorWindow(Editor *editor) {
         this->editor = editor;
@@ -17,6 +20,7 @@ struct KeyValueEditorWindow {
     void control() {
         if (IsKeyPressed(KEY_N) && editIndex < 0) {
             editor->objects[editor->selectedObject].data.push_back({"", ""});
+            reload();
         } 
 
         if (IsKeyPressed(KEY_DELETE)) {
@@ -27,6 +31,7 @@ struct KeyValueEditorWindow {
                 editor->objects[editor->selectedObject].data.erase(editor->objects[editor->selectedObject].data.begin() + editIndex);
                 editIndex = -1;
             }
+            reload();
         } 
 
         if (IsKeyPressed(KEY_ESCAPE)) {
@@ -36,6 +41,7 @@ struct KeyValueEditorWindow {
             } else {
                 editIndex = -1;
             }
+            save();
         } 
 
         if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_TAB)) {
@@ -81,6 +87,7 @@ struct KeyValueEditorWindow {
         if (editor->selectedObject == -1 || editor->state != EditorState::KeyValueEditor) return;
 
         if(GuiWindowBox({100, 100, (float) editor->windowWidth - 200, (float) editor->windowHeight - 200}, "Key/Value Editor")) {
+            save();
             editor->state = EditorState::Editing; 
         }
         
@@ -92,19 +99,29 @@ struct KeyValueEditorWindow {
         int currentIndex = 0;
         bool editing;
 
-        for (auto &entry : element.data) {
+        for (auto &key: keys) {
             editing = false;
 
             if (currentIndex == editIndex) {
                 editing = true;
             }
         
-            if (GuiTextBox({130, (float) offsetY, (float) editor->windowWidth / 2 - 130, (float) editor->fontSize*2}, const_cast<char*>(entry.key.c_str()), 64, editing && editor->keyOrValue == KeyOrValue::Key)) {
+            if (GuiTextBox(
+                {130, (float) offsetY, (float) editor->windowWidth / 2 - 130, (float) editor->fontSize*2},
+                keys[currentIndex],
+                64,
+                editing && editor->keyOrValue == KeyOrValue::Key
+            )) {
                 editIndex = currentIndex;
                 editor->keyOrValue = KeyOrValue::Key;
             }
 
-            if (GuiTextBox({editor->windowWidth / 2 + 30, (float) offsetY, editor->windowWidth / 2 - 160, (float) editor->fontSize*2}, const_cast<char*>(entry.value.c_str()), 64, editing && editor->keyOrValue == KeyOrValue::Value)) {
+            if (GuiTextBox(
+                {editor->windowWidth / 2 + 30, (float) offsetY, editor->windowWidth / 2 - 160, (float) editor->fontSize*2},
+                values[currentIndex],
+                64,
+                editing && editor->keyOrValue == KeyOrValue::Value
+            )) {
                 editIndex = currentIndex;
                 editor->keyOrValue = KeyOrValue::Value;
             }
@@ -113,6 +130,27 @@ struct KeyValueEditorWindow {
             currentIndex++;
         }
     }
+
+    private:
+        void save() {
+            loaded = false;
+            for (unsigned int i = 0; i < keys.size(); i++) {
+                editor->objects[editor->selectedObject].data[i].key = string { keys[i] };
+                editor->objects[editor->selectedObject].data[i].value = string { values[i] };
+            }
+
+        }
+
+        void reload() {
+            keys = {};
+            values = {};
+            for (auto const &pair : editor->objects[editor->selectedObject].data) {
+                keys.push_back((char*)pair.key.c_str());
+                values.push_back((char*)pair.value.c_str());
+            }
+            loaded = true;
+        }
+
 };
 
 #endif

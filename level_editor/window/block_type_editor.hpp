@@ -42,7 +42,7 @@ struct BlockTypeEditorWindow {
             --editIndex %= editor->objectTypes.size();
         }
 
-        if (IsKeyPressed(KEY_N)) {
+        if (IsKeyPressed(KEY_N) && editIndex < 0) {
             editor->objectTypes.push_back({"", BLUE});
             reload();
         }
@@ -77,6 +77,7 @@ struct BlockTypeEditorWindow {
             {100, 100, editor->windowWidth - 200, editor->windowHeight - 200},
             "Block Type Editor"
         )) {
+            save();
             editor->state = EditorState::Editing; 
         }
         
@@ -126,7 +127,6 @@ struct BlockTypeEditorWindow {
         void reload() {
             typeNames = {};
             for (auto const &objectType : editor->objectTypes) {
-                cout << objectType.name << endl;
                 typeNames.push_back((char*)objectType.name.c_str());
             }
             loaded = true;
