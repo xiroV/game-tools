@@ -114,7 +114,7 @@ void loadLevel(Editor *editor) {
             istringstream line(fileLine);
 
             int objectFieldCount = 0;
-            while (objectFieldCount < 6 && getline(line, element, editor->outputDelimiter)) {
+            while (objectFieldCount < 5 && getline(line, element, editor->outputDelimiter)) {
                 lineElements.push_back(stoi(element));
                 objectFieldCount++;
             }
@@ -140,7 +140,7 @@ void loadLevel(Editor *editor) {
                 typeId = editor->objectTypes.size() - 1;
             }
 
-            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], typeId};
+            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4], typeId};
             
             while (getline(line, element, editor->outputDelimiter)) {
                 istringstream keyValuePair = istringstream(element);
@@ -740,9 +740,9 @@ void drawObjects(Camera2D *camera, Editor *editor) {
     for (unsigned int i = 0; i < editor->objects.size(); i++) {
         auto &object = editor->objects[i];
         if (object.width == 0 && object.height == 0) {
-            DrawCircle(object.x, object.y, 5, objectTypeColor(object.type));
+            DrawCircle(object.x, object.y, 5, editor->objectTypes[object.type].color);
         } else {
-            drawRect(object.x, object.y, object.width == 0 ? 1.0f : object.width, object.height == 0 ? 1.0f : object.height, object.rotation, objectTypeColor(object.type));
+            drawRect(object.x, object.y, object.width == 0 ? 1.0f : object.width, object.height == 0 ? 1.0f : object.height, object.rotation, editor->objectTypes[object.type].color);
         }
     }
 }
