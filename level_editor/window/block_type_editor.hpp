@@ -26,20 +26,20 @@ struct BlockTypeEditorWindow {
 
         if (IsKeyPressed(KEY_ESCAPE)) {
             save();
-            if (editor->editBlockTypeIndex < 0) {
-                editor->editBlockTypeIndex = -1;
+            if (editIndex < 0) {
+                editIndex = -1;
                 editor->state = EditorState::Editing;
             } else {
-                editor->editBlockTypeIndex = -1;
+                editIndex = -1;
             }
         }
 
         if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_TAB)) {
-            ++editor->editBlockTypeIndex %= editor->objectTypes.size();
+            ++editIndex %= editor->objectTypes.size();
         }
 
         if (IsKeyPressed(KEY_UP)) {
-            --editor->editBlockTypeIndex %= editor->objectTypes.size();
+            --editIndex %= editor->objectTypes.size();
         }
 
         if (IsKeyPressed(KEY_N)) {
@@ -49,13 +49,14 @@ struct BlockTypeEditorWindow {
 
         if (IsKeyPressed(KEY_DELETE)) {
             if (editor->objectTypes.size() > 1) {
-                editor->objectTypes.erase(editor->objectTypes.begin() + editor->editBlockTypeIndex);
-                editor->editBlockTypeIndex = 0;
+                editor->objectTypes.erase(editor->objectTypes.begin() + editIndex);
+                editIndex = 0;
             }
+            reload(); 
         }
 
-        ObjectType &current = editor->objectTypes[editor->editBlockTypeIndex];
-        if (!editor->objectTypes.empty() && editor->editBlockTypeIndex >= 0) {
+        ObjectType &current = editor->objectTypes[editIndex];
+        if (!editor->objectTypes.empty() && editIndex >= 0) {
             //updateStringByCharInput(current.name, 30, illegalPathCharacters);
 
             if (IsKeyPressed(KEY_END)) {
@@ -88,7 +89,7 @@ struct BlockTypeEditorWindow {
         for (auto &name: typeNames) {
             editing = false;
 
-            if (currentIndex == editor->editBlockTypeIndex) {
+            if (currentIndex == editIndex) {
                 editing = true;
             }
         
@@ -98,7 +99,7 @@ struct BlockTypeEditorWindow {
                 64,
                 editing && editor->keyOrValue == KeyOrValue::Key
             )) {
-                editor->editBlockTypeIndex = currentIndex;
+                editIndex = currentIndex;
             }
 
             DrawRectangle(15 + editor->windowWidth / 2, offsetY, editor->fontSize*2, editor->fontSize*2, editor->objectTypes[currentIndex].color);
@@ -114,16 +115,18 @@ struct BlockTypeEditorWindow {
 
     private:
         void save() {
+            loaded = false;
             int i = 0;
             for (auto const &typeName : typeNames) {
-                strcpy((char*)editor->objectTypes[i].name.c_str(), typeName);
+                editor->objectTypes[i].name = string { typeName };
                 i++;
             }
         }
 
         void reload() {
             typeNames = {};
-            for (auto &objectType : editor->objectTypes) {
+            for (auto const &objectType : editor->objectTypes) {
+                cout << objectType.name << endl;
                 typeNames.push_back((char*)objectType.name.c_str());
             }
             loaded = true;
