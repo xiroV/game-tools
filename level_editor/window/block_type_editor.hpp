@@ -103,7 +103,8 @@ struct BlockTypeEditorWindow {
                 editIndex = currentIndex;
             }
 
-            DrawRectangle(15 + editor->windowWidth / 2, offsetY, editor->fontSize*2, editor->fontSize*2, editor->objectTypes[currentIndex].color);
+            Color c = editor->objectTypes[currentIndex].color;
+            editor->objectTypes[currentIndex].color = GuiColorPicker(Rectangle{15 + editor->windowWidth / 2, (float) offsetY, editor->fontSize*2.0f, editor->fontSize*2.0f}, c);
 
             if (editing) {
                 GuiDrawText("[end] change color", {10 + editor->windowWidth / 2 + 70, (float) offsetY, editor->windowWidth / 2 - 130, (float) editor->fontSize * 2}, 0, BLACK);

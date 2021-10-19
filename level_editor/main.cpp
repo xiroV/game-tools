@@ -155,10 +155,7 @@ void loadLevel(Editor *editor) {
 
 
 bool isElementSelected(Editor *editor) {
-    if (editor->selectedObject >= 0 && editor->selectedObject < (int) editor->objects.size()) {
-        return true;
-    }
-    return false;
+    return editor->selectedObject >= 0 && editor->selectedObject < (int) editor->objects.size();
 }
 
 bool anyMatch(char key, char illegalChars[]) {
