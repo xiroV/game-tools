@@ -28,7 +28,7 @@ struct ObjectData {
 };
 
 struct Object {
-    int x, y, width, height;
+    int x, y, width, height, rotation;
     int type;
     vector<ObjectData> data;
 };

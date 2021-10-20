@@ -15,10 +15,11 @@ const int WINDOW_WIDTH = 1600;
 const int WINDOW_HEIGHT = 1000;
 const int FONT_SIZE = 20;
 const int MOVE_INTERVAL = 10;
+const int ROTATION_INTERVAL = 15;
 const int RESIZE_INTERVAL = 50;
 const int CAMERA_MOVE_SPEED = 5;
 
-Vector2 cameraTarget = {WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
+Vector2 cameraTarget = {WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f};
 float cameraZoom = 1.0f;
 
 bool closeEditor = false;
@@ -113,7 +114,7 @@ void loadLevel(Editor *editor) {
             istringstream line(fileLine);
 
             int objectFieldCount = 0;
-            while (objectFieldCount < 4 && getline(line, element, editor->outputDelimiter)) {
+            while (objectFieldCount < 5 && getline(line, element, editor->outputDelimiter)) {
                 lineElements.push_back(stoi(element));
                 objectFieldCount++;
             }
@@ -139,7 +140,7 @@ void loadLevel(Editor *editor) {
                 typeId = editor->objectTypes.size() - 1;
             }
 
-            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], typeId};
+            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4], typeId};
             
             while (getline(line, element, editor->outputDelimiter)) {
                 istringstream keyValuePair = istringstream(element);
@@ -497,7 +498,7 @@ void control(Editor *editor, vector<Exporter*> exporters) {
 
             // NEW OBJECT
             if (IsKeyPressed(KEY_N)) {
-                Object obj = {WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100};
+                Object obj = {WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100, 0};
                 editor->objects.push_back(obj);
                 editor->selectedObject = editor->objects.size()-1;
             }
@@ -554,6 +555,17 @@ void control(Editor *editor, vector<Exporter*> exporters) {
                 if (IsKeyPressed(KEY_D)) {
                     editor->objects[editor->selectedObject].width += RESIZE_INTERVAL;
                 }
+                
+                // ROTATE 
+                if (IsKeyPressed(KEY_Q)) {
+                    editor->objects[editor->selectedObject].rotation = (editor->objects[editor->selectedObject].rotation - ROTATION_INTERVAL) % 360;
+
+                }
+
+                if (IsKeyPressed(KEY_E)) {
+                    editor->objects[editor->selectedObject].rotation = (editor->objects[editor->selectedObject].rotation + ROTATION_INTERVAL) % 360;
+                }
+
 
                 // DELETE
                 if (IsKeyPressed(KEY_DELETE)) {
@@ -637,6 +649,15 @@ void drawKeyValueList(Editor *editor) {
     }
 }
 
+void drawRect(float x, float y, float width, float height, float rotation, Color color) {
+     DrawRectanglePro(
+        Rectangle {x + width / 2.0f,y + height / 2.0f,width,height},
+        Vector2 {width / 2.0f,  height / 2.0f},
+        rotation,
+        color
+    );
+}
+
 void drawBlockTypeEditor(Editor *editor) {
     if (editor->state != EditorState::ShowBlockTypes && editor->state != EditorState::EditBlockTypes) return;
     DrawRectangle(5, 5, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, GRAY);
@@ -702,59 +723,26 @@ void drawMenu(Editor *editor) {
 }
 
 void drawObjects(Camera2D *camera, Editor *editor) {
-    for (unsigned int i = 0; i < editor->objects.size(); i++) {
-        if (editor->objects[i].width == 0 && editor->objects[i].height == 0) {
-            DrawCircle(editor->objects[i].x, editor->objects[i].y, 5, editor->objectTypes[editor->objects[i].type].color);
-        } else if (editor->objects[i].width == 0) {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, 1, editor->objects[i].height, editor->objectTypes[editor->objects[i].type].color);
-        } else if (editor->objects[i].height == 0) {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, 1, editor->objectTypes[editor->objects[i].type].color);
+    if (isElementSelected(editor)) {
+        auto &selectedObject = editor->objects[editor->selectedObject];
+
+        if (selectedObject.width == 0 && selectedObject.height == 0) {
+            DrawCircleLines(
+                selectedObject.x,
+                selectedObject.y,
+                5.0f,
+                GREEN
+            );
         } else {
-            DrawRectangle(editor->objects[i].x, editor->objects[i].y, editor->objects[i].width, editor->objects[i].height, editor->objectTypes[editor->objects[i].type].color);
+            drawRect(selectedObject.x - 1, selectedObject.y - 1, selectedObject.width + 2, selectedObject.height + 2, selectedObject.rotation, GREEN);
         }
     }
-
-    if (isElementSelected(editor)) {
-        if (editor->objects[editor->selectedObject].width == 0 && editor->objects[editor->selectedObject].height == 0) {
-            DrawCircleLines(
-                editor->objects[editor->selectedObject].x,
-                editor->objects[editor->selectedObject].y,
-                5,
-                GREEN
-            );
-        } else if (editor->objects[editor->selectedObject].width == 0) {
-            DrawRectangleLinesEx(
-                Rectangle {
-                    (float) editor->objects[editor->selectedObject].x,
-                    (float) editor->objects[editor->selectedObject].y,
-                    (float) 2.0,
-                    (float) editor->objects[editor->selectedObject].height,
-                },
-                6-camera->zoom*2,
-                GREEN
-            );
-        } else if (editor->objects[editor->selectedObject].height == 0) {
-            DrawRectangleLinesEx(
-                Rectangle {
-                    (float) editor->objects[editor->selectedObject].x,
-                    (float) editor->objects[editor->selectedObject].y,
-                    (float) editor->objects[editor->selectedObject].width,
-                    (float) 2.0,
-                },
-                6-camera->zoom*2,
-                GREEN
-            );
+    for (unsigned int i = 0; i < editor->objects.size(); i++) {
+        auto &object = editor->objects[i];
+        if (object.width == 0 && object.height == 0) {
+            DrawCircle(object.x, object.y, 5, editor->objectTypes[object.type].color);
         } else {
-            DrawRectangleLinesEx(
-                Rectangle {
-                    (float) editor->objects[editor->selectedObject].x,
-                    (float) editor->objects[editor->selectedObject].y,
-                    (float) editor->objects[editor->selectedObject].width,
-                    (float) editor->objects[editor->selectedObject].height,
-                },
-                6-camera->zoom*2,
-                GREEN
-            );
+            drawRect(object.x, object.y, object.width == 0 ? 1.0f : object.width, object.height == 0 ? 1.0f : object.height, object.rotation, editor->objectTypes[object.type].color);
         }
     }
 }
