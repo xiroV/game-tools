@@ -57,8 +57,6 @@ struct BlockTypeEditorWindow {
 
         ObjectType &current = editor->objectTypes[editIndex];
         if (!editor->objectTypes.empty() && editIndex >= 0) {
-            //updateStringByCharInput(current.name, 30, illegalPathCharacters);
-
             if (IsKeyPressed(KEY_END)) {
                 current.color = (Color) {
                     static_cast<unsigned char>(GetRandomValue(0,255)),

@@ -71,16 +71,6 @@ struct KeyValueEditorWindow {
                 editor->keyOrValue = KeyOrValue::Key;
             }
         } 
-
-
-        if (editIndex >= 0) {
-            // Ah, geez
-            //ObjectData &current = editor->objects[editor->selectedObject].data[editIndex];
-            //string &data = editor->keyOrValue == KeyOrValue::Key ? current.key : current.value; 
-            // Ah, geez end
-            //updateStringByCharInput(data, 30, illegalPathCharacters);
-        }
-
     }
 
     void draw() {
