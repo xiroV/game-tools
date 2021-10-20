@@ -34,48 +34,10 @@ struct Windows {
     KeyValueEditorWindow keyValueEditorWindow;
 };
 
-char illegalPathCharacters[] = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}', 0};
-char dotList[] = {'.', 0};
-
-string illegalFileNames[] = {
-    ".",
-    "..",
-    "aux",
-    "com1",
-    "com2",
-    "com3",
-    "com4",
-    "com5",
-    "com6",
-    "com7",
-    "com8",
-    "com9",
-    "lpt1",
-    "lpt2",
-    "lpt3",
-    "lpt4",
-    "lpt5",
-    "lpt6",
-    "lpt7",
-    "lpt8",
-    "lpt9",
-    "con",
-    "nul",
-    "prn"
-};
-
 string filename = "";
 
 void Editor::drawText(string text, Vector2 position, Color color) {
     DrawText(text.c_str(), position.x, position.y, (float) this->fontSize, color);
-}
-
-std::string toLowerCase(std::string str) {
-    std::string result = "";
-    for (auto &ch : str) {
-        result += std::tolower(ch);
-    }
-    return result;
 }
 
 void loadLevel(Editor *editor) {
@@ -156,32 +118,6 @@ void loadLevel(Editor *editor) {
 
 bool isElementSelected(Editor *editor) {
     return editor->selectedObject >= 0 && editor->selectedObject < (int) editor->objects.size();
-}
-
-bool anyMatch(char key, char illegalChars[]) {
-    // Currently REQUIRES final entry in array is 0.
-    for (int i = 0; illegalChars[i] != 0; i++) {
-        if (illegalChars[i] == key) return true;
-    }
-
-    return false;
-}
-
-void updateStringByCharInput(string &str, const int maxLength, char illegalChars[]) {
-    int key = GetCharPressed();
-    while (key > 0) {
-        if ((int) str.length() < maxLength && !anyMatch(key, illegalChars)) {
-            str.push_back((char) key);
-        }
-
-        key = GetCharPressed();
-    }
-
-    if (IsKeyPressed(KEY_BACKSPACE)) {
-        if (!str.empty()) {
-            str.pop_back();
-        }
-    }
 }
 
 void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
