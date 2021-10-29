@@ -1,5 +1,7 @@
-#ifndef __WINDOW_KEY_VALUE_EDITOR__
-#define __WINDOW_KEY_VALUE_EDITOR__
+#ifndef RAYGUI_IMPLEMENTATION
+#define RAYGUI_IMPLEMENTATION
+#include "../lib/raygui/src/raygui.h"
+#endif
 
 #include "../lib/raylib/src/raylib.h"
 #include "../editor.hpp"
@@ -82,7 +84,7 @@ struct KeyValueEditorWindow {
         }
         
         GuiDrawText("[n] for new key/value pair, [del] to delete", {(float) editor->windowWidth - 550, 100, 200, 100}, 0, BLACK);
-        Object &element = editor->objects[editor->selectedObject];
+        //Object &element = editor->objects[editor->selectedObject];
 
 
         int offsetY = 200;
@@ -143,4 +145,3 @@ struct KeyValueEditorWindow {
 
 };
 
-#endif

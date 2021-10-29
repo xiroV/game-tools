@@ -1,5 +1,7 @@
-#ifndef __WINDOW_BLOCK_TYPE_EDITOR__
-#define __WINDOW_BLOCK_TYPE_EDITOR__
+#ifndef RAYGUI_IMPLEMENTATION
+#define RAYGUI_IMPLEMENTATION
+#include "../lib/raygui/src/raygui.h"
+#endif
 
 #include "../lib/raylib/src/raylib.h"
 #include "../editor.hpp"
@@ -131,5 +133,3 @@ struct BlockTypeEditorWindow {
             loaded = true;
         }
 };
-
-#endif

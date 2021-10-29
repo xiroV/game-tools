@@ -1,10 +1,13 @@
-#ifndef __WINDOW_EXPORT__
-#define __WINDOW_EXPORT__
+#ifndef RAYGUI_IMPLEMENTATION
+#define RAYGUI_IMPLEMENTATION
+#include "../lib/raygui/src/raygui.h"
+#endif
 
 #include "../lib/raylib/src/raylib.h"
 #include "../editor.hpp"
 #include "../export/exporter.hpp"
 #include <iostream>
+#include "common.hpp"
 
 struct ExportWindow {
     Editor *editor;
@@ -12,9 +15,42 @@ struct ExportWindow {
     int exportWindowSelectedOption = 0;
     char levelName[64] = "";
 
+    vector<char> illegalPathCharacters;
+    vector<char> dotList;
+    vector<string> illegalFileNames;
+
     ExportWindow(Editor *editor, vector<Exporter*> exporters) {
         this->editor = editor;
         this->exporters = exporters;
+        this->illegalFileNames = {
+            ".",
+            "..",
+            "aux",
+            "com1",
+            "com2",
+            "com3",
+            "com4",
+            "com5",
+            "com6",
+            "com7",
+            "com8",
+            "com9",
+            "lpt1",
+            "lpt2",
+            "lpt3",
+            "lpt5",
+            "lpt6",
+            "lpt7",
+            "lpt8",
+            "lpt9",
+            "con",
+            "nul",
+            "prn"
+        };
+        this->illegalPathCharacters = {
+            '!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}', 0
+        };
+        this->dotList = {'.', 0};
     }
 
     void control() {
@@ -63,36 +99,6 @@ struct ExportWindow {
                 editor->selectedExporter += 1;
             }
         }
-
-        /*updateStringByCharInput(editor->levelName, 60, illegalPathCharacters);
-        
-        editor->levelnameError = false;
-        bool containsDot = false;
-        int dotPlacement = -1;
-        for (auto &ch : editor->levelName) {
-            bool containsDot = anyMatch(ch, dotList);
-            dotPlacement++;
-            if (containsDot) break;
-        }
-
-        if (containsDot && dotPlacement == 0) {
-            editor->levelnameError = true;
-        } else {
-            for (auto &filename : illegalFileNames) {
-                auto lower = toLowerCase(editor->levelName);
-                if (containsDot) {
-                    if (filename == lower.substr(0, dotPlacement)) {
-                        editor->levelnameError = true;
-                        break;
-                    } 
-                } else {
-                    if (filename == lower) {
-                        editor->levelnameError = true;
-                        break;
-                    }
-                }
-            
-        }*/
     }
 
     void draw() {
@@ -142,4 +148,3 @@ struct ExportWindow {
     }
 };
 
-#endif

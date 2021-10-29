@@ -8,14 +8,17 @@
 #include "export/cpp.hpp"
 #include "export/lvl.hpp"
 
+#ifndef RAYGUI
+#define RAYGUI
 #define RAYGUI_IMPLEMENTATION
-#include "lib/raylib/src/raylib.h"
 #include "lib/raygui/src/raygui.h"
+#endif
 
-#include "window/export.hpp"
-#include "window/exit.hpp"
-#include "window/block_type_editor.hpp"
-#include "window/key_value_editor.hpp"
+#include "lib/raylib/src/raylib.h"
+#include "window/export.cpp"
+#include "window/exit.cpp"
+#include "window/block_type_editor.cpp"
+#include "window/key_value_editor.cpp"
 
 using namespace std;
 

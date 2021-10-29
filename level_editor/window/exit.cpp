@@ -1,58 +1,14 @@
-#ifndef __WINDOW_EXIT__
-#define __WINDOW_EXIT__
+#ifndef RAYGUI_IMPLEMENTATION
+#define RAYGUI_IMPLEMENTATION
+#include "../lib/raygui/src/raygui.h"
+#endif
 
 #include "../lib/raylib/src/raylib.h"
 #include "../editor.hpp"
 #include "../export/exporter.hpp"
 #include <iostream>
+#include "common.hpp"
 
-char illegalPathCharacters[] = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}', 0};
-char dotList[] = {'.', 0};
-
-string illegalFileNames[] = {
-    ".",
-    "..",
-    "aux",
-    "com1",
-    "com2",
-    "com3",
-    "com4",
-    "com5",
-    "com6",
-    "com7",
-    "com8",
-    "com9",
-    "lpt1",
-    "lpt2",
-    "lpt3",
-    "lpt5",
-    "lpt6",
-    "lpt7",
-    "lpt8",
-    "lpt9",
-    "con",
-    "nul",
-    "prn"
-};
-
-std::string toLowerCase(char *str) {
-    std::string result = "";
-    int i = 0;
-    while (str[i] != '\0') {
-        result += std::tolower(str[i]);
-        i++;
-    }
-    return result;
-}
-
-bool anyMatch(char key, char illegalChars[]) {
-    // Currently REQUIRES final entry in array is 0.
-    for (int i = 0; illegalChars[i] != 0; i++) {
-        if (illegalChars[i] == key) return true;
-    }
-
-    return false;
-}
 
 struct ExitWindow {
     Editor *editor;
@@ -60,32 +16,14 @@ struct ExitWindow {
     int exitWindowSelectedOption = 0;
     char levelName[64] = "";
     bool levelNameError = false;
+    WindowFunctions func;
 
     ExitWindow(Editor *editor, Exporter *exporter) {
         this->editor = editor;
         this->exporter= exporter;
+        this->func = WindowFunctions();
     }
 
-    void replaceIllegalChars() {
-        const int levelNameSize = sizeof(levelName) / sizeof((levelName)[0]);
-        for (int i = levelNameSize; i >= 0; i--) {
-            if (anyMatch(levelName[i], illegalPathCharacters)) {
-                levelName[i] = '\0';
-                break;
-            }
-        }
-    }
-
-    bool isIllegalName() {
-        const int fileNameCount = sizeof(illegalFileNames) / sizeof((illegalFileNames)[0]);
-        for (int i = 0; i < fileNameCount; i++) {
-            std::string lower = toLowerCase(levelName);
-            if (levelName == illegalFileNames[i]) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     void control() {
         if (IsKeyPressed(KEY_ESCAPE)) {
@@ -122,8 +60,8 @@ struct ExitWindow {
             }
         }
 
-        replaceIllegalChars();
-        levelNameError = isIllegalName();
+        func.replaceIllegalChars(levelName);
+        levelNameError = func.isIllegalName(levelName);
     }
 
     void draw() {
@@ -174,5 +112,3 @@ struct ExitWindow {
         if(exitWindowSelectedOption == 2) GuiSetState(GUI_STATE_NORMAL);
     }
 };
-
-#endif
