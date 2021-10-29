@@ -10,15 +10,18 @@
 #include <vector>
 #include <array>
 #include <stdio.h>
+#include "common.hpp"
 
 struct BlockTypeEditorWindow {
     Editor *editor;
     int editIndex = -1;
     vector<char*> typeNames;
     bool loaded = false;
+    WindowFunctions func;
 
     BlockTypeEditorWindow(Editor *editor) {
         this->editor = editor;
+        this->func = WindowFunctions();
     }
 
     void control() {
@@ -68,6 +71,10 @@ struct BlockTypeEditorWindow {
                 }; 
             }
         }
+
+        for (auto &name : typeNames) {
+            func.replaceIllegalExportChars(name);
+        }
     }
 
     void draw() {
@@ -87,7 +94,7 @@ struct BlockTypeEditorWindow {
         int currentIndex = 0;
         bool editing;
 
-        for (auto &name: typeNames) {
+        for (auto &name : typeNames) {
             editing = false;
 
             if (currentIndex == editIndex) {
@@ -103,11 +110,12 @@ struct BlockTypeEditorWindow {
                 editIndex = currentIndex;
             }
 
+            DrawRectangle(15 + editor->windowWidth / 2, offsetY, editor->fontSize*2, editor->fontSize*2, editor->objectTypes[currentIndex].color);
             Color c = editor->objectTypes[currentIndex].color;
-            editor->objectTypes[currentIndex].color = GuiColorPicker(Rectangle{15 + editor->windowWidth / 2, (float) offsetY, editor->fontSize*2.0f, editor->fontSize*2.0f}, c);
+            editor->objectTypes[currentIndex].color = GuiColorPicker(Rectangle{15 + editor->windowWidth / 2 + editor->fontSize*2 + 10, (float) offsetY, editor->fontSize*2.0f, editor->fontSize*2.0f}, c);
 
             if (editing) {
-                GuiDrawText("[end] change color", {10 + editor->windowWidth / 2 + 70, (float) offsetY, editor->windowWidth / 2 - 130, (float) editor->fontSize * 2}, 0, BLACK);
+                GuiDrawText("[end] random color", {10 + editor->windowWidth / 2 + 150, (float) offsetY, editor->windowWidth / 2 - 130, (float) editor->fontSize * 2}, 0, BLACK);
             }
 
             offsetY += editor->fontSize * 2 + 5;

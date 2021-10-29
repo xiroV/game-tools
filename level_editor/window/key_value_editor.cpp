@@ -7,6 +7,7 @@
 #include "../editor.hpp"
 #include "../export/exporter.hpp"
 #include <iostream>
+#include "common.hpp"
 
 struct KeyValueEditorWindow {
     Editor *editor;
@@ -14,9 +15,11 @@ struct KeyValueEditorWindow {
     vector<char*> keys;
     vector<char*> values;
     bool loaded = false;
+    WindowFunctions func;
 
     KeyValueEditorWindow(Editor *editor) {
         this->editor = editor;
+        this->func = WindowFunctions();
     }
 
     void control() {
@@ -73,6 +76,14 @@ struct KeyValueEditorWindow {
                 editor->keyOrValue = KeyOrValue::Key;
             }
         } 
+
+        for (auto &val : values) {
+            func.replaceIllegalExportChars(val);
+        }
+
+        for (auto &key : keys) {
+            func.replaceIllegalExportChars(key);
+        }
     }
 
     void draw() {

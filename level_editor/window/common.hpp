@@ -7,6 +7,7 @@
 
 struct WindowFunctions {
     std::vector<char> illegalPathCharacters;
+    std::vector<char> illegalExportCharacters;
     std::vector<char> dotList;
     std::vector<std::string> illegalFileNames;
 
@@ -38,6 +39,7 @@ struct WindowFunctions {
         };
         this->dotList = {'.', 0};
         this->illegalPathCharacters = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}', 0};
+        this->illegalExportCharacters = {'"', '=', ';'};
     }
 
 
@@ -59,10 +61,20 @@ struct WindowFunctions {
         return false;
     }
 
-    void replaceIllegalChars(char* str) {
+    void replaceIllegalPathChars(char* str) {
         const int strSize = sizeof(str) / sizeof((str)[0]);
         for (int i = strSize; i >= 0; i--) {
             if (anyMatch(str[i], illegalPathCharacters)) {
+                str[i] = '\0';
+                break;
+            }
+        }
+    }
+
+    void replaceIllegalExportChars(char* str) {
+        const int strSize = sizeof(str) / sizeof((str)[0]);
+        for (int i = strSize; i >= 0; i--) {
+            if (anyMatch(str[i], illegalExportCharacters)) {
                 str[i] = '\0';
                 break;
             }
