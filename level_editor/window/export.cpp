@@ -14,43 +14,13 @@ struct ExportWindow {
     vector<Exporter*> exporters;
     int exportWindowSelectedOption = 0;
     char levelName[64] = "";
-
-    vector<char> illegalPathCharacters;
-    vector<char> dotList;
-    vector<string> illegalFileNames;
+    bool levelNameError = false;
+    WindowFunctions func;
 
     ExportWindow(Editor *editor, vector<Exporter*> exporters) {
         this->editor = editor;
         this->exporters = exporters;
-        this->illegalFileNames = {
-            ".",
-            "..",
-            "aux",
-            "com1",
-            "com2",
-            "com3",
-            "com4",
-            "com5",
-            "com6",
-            "com7",
-            "com8",
-            "com9",
-            "lpt1",
-            "lpt2",
-            "lpt3",
-            "lpt5",
-            "lpt6",
-            "lpt7",
-            "lpt8",
-            "lpt9",
-            "con",
-            "nul",
-            "prn"
-        };
-        this->illegalPathCharacters = {
-            '!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}', 0
-        };
-        this->dotList = {'.', 0};
+        this->func = WindowFunctions();
     }
 
     void control() {
@@ -61,7 +31,7 @@ struct ExportWindow {
         if (IsKeyPressed(KEY_ENTER)) {
             if (exportWindowSelectedOption == 0) {
                 editor->levelName = levelName;
-                if (!editor->levelName.empty()) {
+                if (!editor->levelName.empty() && !levelNameError) {
                     exporters[editor->selectedExporter]->saveLevel(editor);
                 }
             }
@@ -99,6 +69,10 @@ struct ExportWindow {
                 editor->selectedExporter += 1;
             }
         }
+
+
+        func.replaceIllegalChars(levelName);
+        levelNameError = func.isIllegalName(levelName);
     }
 
     void draw() {
@@ -110,6 +84,13 @@ struct ExportWindow {
         }
 
         GuiLabel({120, (float) yBase, 500, (float) editor->fontSize*2}, "Level name");
+
+        if (levelNameError) {
+            GuiSetStyle(TEXTBOX, BORDER_COLOR_PRESSED, ColorToInt(RED));
+        } else {
+            GuiSetStyle(TEXTBOX, BORDER_COLOR_PRESSED, 0x0492c7ff);
+        }
+
 
         if (editor->levelnameError) { GuiSetState(GUI_STATE_DISABLED); } else {GuiSetState(GUI_STATE_NORMAL); }
         GuiTextBox(
@@ -134,7 +115,7 @@ struct ExportWindow {
         if(exportWindowSelectedOption == 0) GuiSetState(GUI_STATE_FOCUSED);
         if (GuiButton({120, (float) yBase+editor->fontSize*9, (float) 75*scale, (float) editor->fontSize*2}, "Export")) {
             editor->levelName = levelName;
-            if (!editor->levelName.empty()) {
+            if (!editor->levelName.empty() && !levelNameError) {
                 exporters[editor->selectedExporter]->saveLevel(editor);
             }
         }
