@@ -25,7 +25,6 @@ string illegalFileNames[] = {
     "lpt1",
     "lpt2",
     "lpt3",
-    "lpt4",
     "lpt5",
     "lpt6",
     "lpt7",
@@ -60,10 +59,32 @@ struct ExitWindow {
     Exporter* exporter;
     int exitWindowSelectedOption = 0;
     char levelName[64] = "";
+    bool levelNameError = false;
 
     ExitWindow(Editor *editor, Exporter *exporter) {
         this->editor = editor;
         this->exporter= exporter;
+    }
+
+    void replaceIllegalChars() {
+        const int levelNameSize = sizeof(levelName) / sizeof((levelName)[0]);
+        for (int i = levelNameSize; i >= 0; i--) {
+            if (anyMatch(levelName[i], illegalPathCharacters)) {
+                levelName[i] = '\0';
+                break;
+            }
+        }
+    }
+
+    bool isIllegalName() {
+        const int fileNameCount = sizeof(illegalFileNames) / sizeof((illegalFileNames)[0]);
+        for (int i = 0; i < fileNameCount; i++) {
+            std::string lower = toLowerCase(levelName);
+            if (levelName == illegalFileNames[i]) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void control() {
@@ -74,7 +95,7 @@ struct ExitWindow {
         if (IsKeyPressed(KEY_ENTER)) {
             if (exitWindowSelectedOption == 0) {
                 editor->levelName =  levelName;
-                if (!editor->levelName.empty()) {
+                if (!editor->levelName.empty() && !levelNameError) {
                     exporter->saveLevel(editor);
                     editor->closeEditor = true;
                 }
@@ -100,6 +121,9 @@ struct ExitWindow {
                 exitWindowSelectedOption -= 1;
             }
         }
+
+        replaceIllegalChars();
+        levelNameError = isIllegalName();
     }
 
     void draw() {
@@ -112,7 +136,12 @@ struct ExitWindow {
 
         GuiLabel({120, (float) yBase, 500, (float) editor->fontSize*2}, "Level name");
 
-        if (editor->levelnameError) { GuiSetState(GUI_STATE_DISABLED); } else {GuiSetState(GUI_STATE_NORMAL); }
+        if (levelNameError) {
+            GuiSetStyle(TEXTBOX, BORDER_COLOR_PRESSED, ColorToInt(RED));
+        } else {
+            GuiSetStyle(TEXTBOX, BORDER_COLOR_PRESSED, 0x0492c7ff);
+        }
+
         GuiTextBox(
             {120, (float)yBase+editor->fontSize*2, editor->windowWidth-240, (float) editor->fontSize*2},
             levelName,
@@ -120,35 +149,12 @@ struct ExitWindow {
             true
         );
         
-        // Handle illegal characters
-        const int levelNameSize = sizeof(levelName) / sizeof((levelName)[0]);
-        for (int i = levelNameSize; i >= 0; i--) {
-            if (anyMatch(levelName[i], illegalPathCharacters)) {
-                levelName[i] = '\0';
-                break;
-            }
-        }
-
-        // Handle illegal filenames
-        const int fileNameCount = sizeof(illegalFileNames) / sizeof((illegalFileNames)[0]);
-        bool illegalName = false;
-        for (int i = 0; i < fileNameCount; i++) {
-            std::string lower = toLowerCase(levelName);
-            if (levelName == illegalFileNames[i]) {
-                illegalName = true;
-                break;
-            }
-        }
-
-        if (illegalName) { std::cout << "illegal file name" << std::endl; }
-        else { std::cout << "Legal" << std::endl; }
-        
         GuiSetState(GUI_STATE_NORMAL);
 
         if(exitWindowSelectedOption == 0) GuiSetState(GUI_STATE_FOCUSED);
         if (GuiButton({120, (float) yBase+editor->fontSize*5, (float) 75*scale, (float) editor->fontSize*2}, "Save & Exit")) {
             editor->levelName = levelName;
-            if (!editor->levelName.empty()) {
+            if (!editor->levelName.empty() && !levelNameError) {
                 exporter->saveLevel(editor);
                 editor->closeEditor = true;
             }        
