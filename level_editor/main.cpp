@@ -157,7 +157,11 @@ void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
         }
         case EditorState::Editing: {
             if (IsKeyPressed(KEY_ESCAPE)) {
-                editor->state = EditorState::Closing;
+                if (editor->selectedObject >= 0) {
+                    editor->selectedObject = -1;
+                } else {
+                    editor->state = EditorState::Closing;
+                }
             }
 
             if (IsKeyPressed(KEY_M)) {
