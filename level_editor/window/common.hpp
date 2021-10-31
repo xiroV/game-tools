@@ -84,7 +84,7 @@ struct WindowFunctions {
     bool isIllegalName(char* str) {
         for (int i = 0; i < illegalFileNames.size(); i++) {
             std::string lower = toLowerCase(str);
-            if (str== illegalFileNames[i]) {
+            if (str == illegalFileNames[i]) {
                 return true;
             }
         }
