@@ -3,6 +3,8 @@
 
 #include <string>
 #include "../editor.hpp"
+#include <fstream>
+#include <iostream>
 
 struct Exporter {
     virtual std::string generate(Editor* editor) = 0;
@@ -24,10 +26,26 @@ struct Exporter {
         return extension;
     };
 
+    void saveLevel(Editor *editor) {
+        string filename = editor->levelName + "." + getExtension();
+        ofstream levelFile;
+        levelFile.open(filename, ios::out);
+
+        if (levelFile.is_open()) {
+            levelFile << generate(editor);
+        } else {
+            std::cout << "Unable to open file " << filename << std::endl;
+        }
+
+        levelFile.close();
+    }
+
     private:
         std::string name;
         std::string extension;
 };
+
+
 
 #endif
 

@@ -4,87 +4,44 @@
 #include <typeinfo>
 #include <vector>
 #include <fstream>
-#include <raylib.h>
 #include "editor.hpp"
 #include "export/cpp.hpp"
 #include "export/lvl.hpp"
 
+#ifndef RAYGUI
+#define RAYGUI
+#define RAYGUI_IMPLEMENTATION
+#include "lib/raygui/src/raygui.h"
+#endif
+
+#include "lib/raylib/src/raylib.h"
+#include "window/export.cpp"
+#include "window/exit.cpp"
+#include "window/block_type_editor.cpp"
+#include "window/key_value_editor.cpp"
+
 using namespace std;
 
-const int WINDOW_WIDTH = 1600;
-const int WINDOW_HEIGHT = 1000;
-const int FONT_SIZE = 20;
 const int MOVE_INTERVAL = 10;
 const int ROTATION_INTERVAL = 15;
 const int RESIZE_INTERVAL = 50;
 const int CAMERA_MOVE_SPEED = 5;
 
-Vector2 cameraTarget = {WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f};
 float cameraZoom = 1.0f;
 
-bool closeEditor = false;
 int exitWindowSelectedOption = 0;
-int exportWindowSelectedOption = 0;
 
-char illegalPathCharacters[] = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}', 0};
-char dotList[] = {'.', 0};
-
-string illegalFileNames[] = {
-    ".",
-    "..",
-    "aux",
-    "com1",
-    "com2",
-    "com3",
-    "com4",
-    "com5",
-    "com6",
-    "com7",
-    "com8",
-    "com9",
-    "lpt1",
-    "lpt2",
-    "lpt3",
-    "lpt4",
-    "lpt5",
-    "lpt6",
-    "lpt7",
-    "lpt8",
-    "lpt9",
-    "con",
-    "nul",
-    "prn"
+struct Windows {
+    ExportWindow exportWindow;
+    ExitWindow exitWindow;
+    BlockTypeEditorWindow blockTypeEditorWindow;
+    KeyValueEditorWindow keyValueEditorWindow;
 };
 
 string filename = "";
 
 void Editor::drawText(string text, Vector2 position, Color color) {
-    DrawTextEx(this->defaultFont, text.c_str(), position, FONT_SIZE, 0, color);
-}
-
-int selectedExporter = 0;
-
-Rectangle objectButton = {WINDOW_WIDTH-105, 5, 100, 30};   
-
-void saveLevel(Editor *editor, Exporter* exporter) {
-    ofstream levelFile;
-    levelFile.open(filename, ios::out);
-
-    if (levelFile.is_open()) {
-        levelFile << exporter->generate(editor);
-    } else {
-        cout << "Unable to open file " << filename << endl;
-    }
-
-    levelFile.close();
-}
-
-std::string toLowerCase(std::string str) {
-    std::string result = "";
-    for (auto &ch : str) {
-        result += std::tolower(ch);
-    }
-    return result;
+    DrawText(text.c_str(), position.x, position.y, (float) this->fontSize, color);
 }
 
 void loadLevel(Editor *editor) {
@@ -164,39 +121,10 @@ void loadLevel(Editor *editor) {
 
 
 bool isElementSelected(Editor *editor) {
-    if (editor->selectedObject >= 0 && editor->selectedObject < (int) editor->objects.size()) {
-        return true;
-    }
-    return false;
+    return editor->selectedObject >= 0 && editor->selectedObject < (int) editor->objects.size();
 }
 
-bool anyMatch(char key, char illegalChars[]) {
-    // Currently REQUIRES final entry in array is 0.
-    for (int i = 0; illegalChars[i] != 0; i++) {
-        if (illegalChars[i] == key) return true;
-    }
-
-    return false;
-}
-
-void updateStringByCharInput(string &str, const int maxLength, char illegalChars[]) {
-    int key = GetCharPressed();
-    while (key > 0) {
-        if ((int) str.size() < maxLength && !anyMatch(key, illegalChars)) {
-            str.push_back((char) key);
-        }
-
-        key = GetCharPressed();
-    }
-
-    if (IsKeyPressed(KEY_BACKSPACE)) {
-        if (str.size() > 0) {
-            str.pop_back();
-        }
-    }
-}
-
-void control(Editor *editor, vector<Exporter*> exporters) {
+void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
 
     if (IsKeyDown(KEY_LEFT_ALT) && IsKeyDown(KEY_F4)) {
         if (isElementSelected(editor)) {
@@ -212,267 +140,19 @@ void control(Editor *editor, vector<Exporter*> exporters) {
     
     switch (editor->state) {
         case EditorState::Closing: {
-            if (IsKeyPressed(KEY_ESCAPE)) {
-                editor->state = EditorState::Editing;
-            }
-
-            if (IsKeyPressed(KEY_ENTER)) {
-                if (exitWindowSelectedOption == 0) {
-                    if (editor->levelName.size() > 0) {
-                        filename = editor->levelName + "." + exporters[0]->getExtension();
-                        saveLevel(editor, exporters[0]);
-                        closeEditor = true;
-                    }
-                } else if(exitWindowSelectedOption == 1) {
-                    closeEditor = true;
-                } else {
-                    editor->state = EditorState::Editing;
-                }
-            }
-
-            if (IsKeyPressed(KEY_TAB) || IsKeyPressed(KEY_RIGHT)) {
-                if (exitWindowSelectedOption < 2) { // MOD?
-                    exitWindowSelectedOption += 1;
-                } else {
-                    exitWindowSelectedOption = 0;
-                }
-            } 
-
-            if (IsKeyPressed(KEY_LEFT)) {
-                if (exitWindowSelectedOption == 0) {
-                    exitWindowSelectedOption = 2;
-                } else {
-                    exitWindowSelectedOption -= 1;
-                }
-            }
-
-            updateStringByCharInput(editor->levelName, 60, illegalPathCharacters);
-            
-            editor->levelnameError = false;
-            bool containsDot = false;
-            int dotPlacement = -1;
-            for (auto &ch : editor->levelName) {
-                bool containsDot = anyMatch(ch, dotList);
-                dotPlacement++;
-                if (containsDot) break;
-            }
-
-            if (containsDot && dotPlacement == 0) {
-                editor->levelnameError = true;
-            } else {
-                for (auto &filename : illegalFileNames) {
-                    auto lower = toLowerCase(editor->levelName);
-                    if (containsDot) {
-                        if (filename == lower.substr(0, dotPlacement)) {
-                            editor->levelnameError = true;
-                            break;
-                        } 
-                    } else {
-                        if (filename == lower) {
-                            editor->levelnameError = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
+            windows->exitWindow.control();
             break;
         } 
         case EditorState::Export: {
-            if (IsKeyPressed(KEY_ESCAPE)) {
-                editor->state = EditorState::Editing;
-            }
-
-            if (IsKeyPressed(KEY_ENTER)) {
-                if (exportWindowSelectedOption == 0) {
-                    if (editor->levelName.size() > 0) {
-                        filename = editor->levelName + "." + exporters[selectedExporter]->getExtension();
-                        saveLevel(editor, exporters[selectedExporter]);
-                    }
-                }
-                editor->state = EditorState::Editing;
-            }
-
-            if (IsKeyPressed(KEY_TAB) || IsKeyPressed(KEY_RIGHT)) {
-                if (exportWindowSelectedOption < 1) { // MOD?
-                    exportWindowSelectedOption += 1;
-                } else {
-                    exportWindowSelectedOption = 0;
-                }
-            } 
-
-            if (IsKeyPressed(KEY_LEFT)) {
-                if (exportWindowSelectedOption == 0) {
-                    exportWindowSelectedOption = 1;
-                } else {
-                    exportWindowSelectedOption -= 1;
-                }
-            }
-
-            if (IsKeyPressed(KEY_UP)) {
-                if (selectedExporter <= 0) {
-                    selectedExporter = exporters.size()  - 1;
-                } else {
-                    selectedExporter -= 1;
-                }
-            }
-
-            if (IsKeyPressed(KEY_DOWN)) {
-                if (selectedExporter >= (int) exporters.size() - 1) {
-                    selectedExporter = 0;
-                } else {
-                    selectedExporter += 1;
-                }
-            }
-
-            updateStringByCharInput(editor->levelName, 60, illegalPathCharacters);
-            
-            editor->levelnameError = false;
-            bool containsDot = false;
-            int dotPlacement = -1;
-            for (auto &ch : editor->levelName) {
-                bool containsDot = anyMatch(ch, dotList);
-                dotPlacement++;
-                if (containsDot) break;
-            }
-
-            if (containsDot && dotPlacement == 0) {
-                editor->levelnameError = true;
-            } else {
-                for (auto &filename : illegalFileNames) {
-                    auto lower = toLowerCase(editor->levelName);
-                    if (containsDot) {
-                        if (filename == lower.substr(0, dotPlacement)) {
-                            editor->levelnameError = true;
-                            break;
-                        } 
-                    } else {
-                        if (filename == lower) {
-                            editor->levelnameError = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
+            windows->exportWindow.control();
             break;
         }
-        case EditorState::EditKeyValue: {
-            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) {
-                editor->state = EditorState::ShowKeyValue;     
-            } else {
-                if (
-                    IsKeyPressed(KEY_TAB) ||
-                    (editor->keyOrValue == KeyOrValue::Key && IsKeyPressed(KEY_RIGHT)) ||
-                    (editor->keyOrValue == KeyOrValue::Value && IsKeyPressed(KEY_LEFT))
-                ) {
-                    if (editor->keyOrValue == KeyOrValue::Key) {
-                        editor->keyOrValue = KeyOrValue::Value;
-                    } else {
-                        editor->keyOrValue = KeyOrValue::Key;
-                    }
-                } 
-
-                // Ah, geez
-                ObjectData &current = editor->objects[editor->selectedObject].data[editor->editKeyValueIndex];
-                string &data = editor->keyOrValue == KeyOrValue::Key ? current.key : current.value; 
-                // Ah, geez end
-                updateStringByCharInput(data, 30, illegalPathCharacters);
-            }
+        case EditorState::KeyValueEditor: {
+            windows->keyValueEditorWindow.control();
             break;
         }
-        case EditorState::ShowKeyValue: {
-            if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_V)) {
-                editor->state = EditorState::Editing;
-            }
-
-            if (IsKeyPressed(KEY_ENTER)) {
-                if (editor->objects[editor->selectedObject].data.size() > 0) {
-                    editor->state = EditorState::EditKeyValue;
-                }
-            }
-
-            if (IsKeyPressed(KEY_DOWN)) {
-                ++editor->editKeyValueIndex %= editor->objects[editor->selectedObject].data.size();
-            }
-
-            if (IsKeyPressed(KEY_UP)) {
-                --editor->editKeyValueIndex %= editor->objects[editor->selectedObject].data.size();
-            }
-
-            if (IsKeyPressed(KEY_N)) {
-                editor->objects[editor->selectedObject].data.push_back({"key", "value"});
-            }
-
-            if (IsKeyPressed(KEY_DELETE)) {
-                if (editor->objects[editor->selectedObject].data.size() > 0) {
-                    editor->objects[editor->selectedObject].data.erase(editor->objects[editor->selectedObject].data.begin() + editor->editKeyValueIndex);
-                    editor->editKeyValueIndex = 0;
-                }
-            }
-
-            break;
-        }
-        case EditorState::ShowBlockTypes: {
-            if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_V)) {
-                editor->state = EditorState::Editing;
-            }
-
-            if (IsKeyPressed(KEY_ENTER)) {
-                editor->state = EditorState::EditBlockTypes;
-            }
-
-            if (IsKeyPressed(KEY_DOWN)) {
-                ++editor->editBlockTypeIndex %= editor->objectTypes.size();
-            }
-
-            if (IsKeyPressed(KEY_UP)) {
-                --editor->editBlockTypeIndex %= editor->objectTypes.size();
-            }
-
-            if (IsKeyPressed(KEY_N)) {
-                editor->objectTypes.push_back({"", BLUE});
-            }
-
-            if (IsKeyPressed(KEY_DELETE)) {
-                if (editor->objectTypes.size() > 1) {
-                    editor->objectTypes.erase(editor->objectTypes.begin() + editor->editBlockTypeIndex);
-                    editor->editBlockTypeIndex = 0;
-                }
-            }
-
-            break;
-        }
-        case EditorState::EditBlockTypes: {
-            if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE)) {
-                editor->state = EditorState::ShowBlockTypes;     
-            } else {
-                if (
-                    IsKeyPressed(KEY_TAB) ||
-                    (editor->objectTypeParameter == ObjectTypeParameter::Name && IsKeyPressed(KEY_RIGHT)) ||
-                    (editor->objectTypeParameter == ObjectTypeParameter::Color && IsKeyPressed(KEY_LEFT))
-                ) {
-                    if (editor->objectTypeParameter == ObjectTypeParameter::Name) {
-                        editor->objectTypeParameter= ObjectTypeParameter::Color;
-                    } else {
-                        editor->objectTypeParameter = ObjectTypeParameter::Name;
-                    }
-                } 
-
-                ObjectType &current = editor->objectTypes[editor->editBlockTypeIndex];
-                if (editor->objectTypeParameter == ObjectTypeParameter::Name) {
-                    updateStringByCharInput(current.name, 30, illegalPathCharacters);
-                } else {
-                    if (IsKeyPressed(KEY_SPACE)) {
-                        current.color = (Color) {
-                            static_cast<unsigned char>(GetRandomValue(0,255)),
-                            static_cast<unsigned char>(GetRandomValue(0, 255)),
-                            static_cast<unsigned char>(GetRandomValue(0,255)),
-                            255
-                        }; 
-                    }
-                }
-            }
+        case EditorState::BlockTypeEditor: {
+            windows->blockTypeEditorWindow.control();
             break;
         }
         case EditorState::Editing: {
@@ -493,12 +173,12 @@ void control(Editor *editor, vector<Exporter*> exporters) {
             }
 
             if (IsKeyPressed(KEY_Y)) {
-                editor->state = EditorState::ShowBlockTypes;
+                editor->state = EditorState::BlockTypeEditor;
             }
 
             // NEW OBJECT
             if (IsKeyPressed(KEY_N)) {
-                Object obj = {WINDOW_WIDTH/2-50, WINDOW_HEIGHT/2-50, 100, 100, 0};
+                Object obj = {(int) editor->windowWidth/2-50, (int) editor->windowHeight/2-50, 100, 100, 0};
                 editor->objects.push_back(obj);
                 editor->selectedObject = editor->objects.size()-1;
             }
@@ -588,64 +268,30 @@ void control(Editor *editor, vector<Exporter*> exporters) {
 
                 // OPEN KEY VALUE WINDOW
                 if (IsKeyPressed(KEY_V)) {
-                    editor->state = EditorState::ShowKeyValue;
+                    editor->state = EditorState::KeyValueEditor;
                 }
 
              } else {
                 // MOVEMENT
                 if (IsKeyDown(KEY_UP)) {
-                    cameraTarget.y -= CAMERA_MOVE_SPEED;
+                    editor->cameraTarget.y -= CAMERA_MOVE_SPEED;
                 }
 
                 if (IsKeyDown(KEY_DOWN)) {
-                    cameraTarget.y += CAMERA_MOVE_SPEED;
+                    editor->cameraTarget.y += CAMERA_MOVE_SPEED;
                 }
 
                 if (IsKeyDown(KEY_LEFT)) {
-                    cameraTarget.x -= CAMERA_MOVE_SPEED;
+                    editor->cameraTarget.x -= CAMERA_MOVE_SPEED;
                 }
 
                 if (IsKeyDown(KEY_RIGHT)) {
-                    cameraTarget.x += CAMERA_MOVE_SPEED;
+                    editor->cameraTarget.x += CAMERA_MOVE_SPEED;
                 }
 
             }
             break;
         }
-    }
-}
-
-void drawKeyValueList(Editor *editor) {
-    if (editor->selectedObject == -1 || (editor->state != EditorState::ShowKeyValue && editor->state != EditorState::EditKeyValue)) return;
-    DrawRectangle(5, 5, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, GRAY);
-    editor->drawText("[n] for new Key Value Pair", {WINDOW_WIDTH - 280, 10}, WHITE);
-    Object &element = editor->objects[editor->selectedObject];
-
-    int offsetY = 40;
-    int currentIndex = 0;
-    for (auto &entry : element.data) {
-        editor->drawText(entry.key, {15, (float) offsetY}, WHITE);
-        editor->drawText(entry.value, {15 + WINDOW_WIDTH / 2, (float) offsetY}, WHITE);
-
-        if (currentIndex == editor->editKeyValueIndex) {
-            if (editor->state == EditorState::EditKeyValue) {
-                switch (editor->keyOrValue) {
-                    case KeyOrValue::Key: {
-                        DrawRectangleLines(10, offsetY, (WINDOW_WIDTH - 30) / 2, FONT_SIZE, YELLOW);
-                        break;
-                    }
-                    case KeyOrValue::Value: {
-                        DrawRectangleLines(10 + WINDOW_WIDTH / 2, offsetY, (WINDOW_WIDTH - 30) / 2, FONT_SIZE, YELLOW);
-                        break;
-                    }
-                }
-            } else {
-                DrawRectangleLines(10, offsetY, WINDOW_WIDTH - 30, FONT_SIZE, YELLOW);
-            }
-        }
-
-        offsetY += FONT_SIZE + 4;
-        currentIndex++;
     }
 }
 
@@ -658,42 +304,8 @@ void drawRect(float x, float y, float width, float height, float rotation, Color
     );
 }
 
-void drawBlockTypeEditor(Editor *editor) {
-    if (editor->state != EditorState::ShowBlockTypes && editor->state != EditorState::EditBlockTypes) return;
-    DrawRectangle(5, 5, WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10, GRAY);
-    editor->drawText("[n] for new block type", {WINDOW_WIDTH - 280, 10}, WHITE);
-
-    int offsetY = 40;
-    int currentIndex = 0;
-    for (auto &blockType: editor->objectTypes) {
-        editor->drawText(blockType.name, {15, (float) offsetY}, WHITE);
-        DrawRectangle(15 + WINDOW_WIDTH / 2, offsetY, 100, 20, blockType.color);
-
-        if (currentIndex == editor->editBlockTypeIndex) {
-            if (editor->state == EditorState::EditBlockTypes) {
-                switch (editor->objectTypeParameter) {
-                    case ObjectTypeParameter::Name: {
-                        DrawRectangleLines(10, offsetY, (WINDOW_WIDTH - 30) / 2, FONT_SIZE, YELLOW);
-                        break;
-                    }
-                    case ObjectTypeParameter::Color: {
-                        DrawRectangleLines(10 + WINDOW_WIDTH / 2, offsetY, (WINDOW_WIDTH - 30) / 2, FONT_SIZE, YELLOW);
-                        editor->drawText("[space] to change", {10 + WINDOW_WIDTH / 2 + 120, (float) offsetY}, WHITE);
-                        break;
-                    }
-                }
-            } else {
-                DrawRectangleLines(10, offsetY, WINDOW_WIDTH - 30, FONT_SIZE, YELLOW);
-            }
-        }
-
-        offsetY += FONT_SIZE + 4;
-        currentIndex++;
-    }
-}
-
 void drawMenu(Editor *editor) {
-    int xpos = WINDOW_WIDTH-FONT_SIZE*8;
+    int xpos = editor->windowWidth-editor->fontSize*8;
 
     vector<const char*> entries = {
         "[n] new",
@@ -710,13 +322,13 @@ void drawMenu(Editor *editor) {
     int ypos = 10;
     for (unsigned int i = 0; i < entries.size(); i++) {
         editor->drawText(entries[i], {(float) xpos, (float) ypos}, LIGHTGRAY);
-        ypos += 8+FONT_SIZE;
+        ypos += 8+editor->fontSize;
     }
 
     if (isElementSelected(editor)) {
         editor->drawText(
             editor->objectTypes[editor->objects[editor->selectedObject].type].name,
-            { 20, WINDOW_HEIGHT - 30},
+            { 20, editor->windowHeight - 30},
             editor->objectTypes[editor->objects[editor->selectedObject].type].color
         );
     }
@@ -747,69 +359,29 @@ void drawObjects(Camera2D *camera, Editor *editor) {
     }
 }
 
-void drawWindows(Editor *editor, vector<Exporter*> exporters) {
-    int scale = FONT_SIZE/10;
-    int yBase = 120+FONT_SIZE;
-
-    if (editor->state == EditorState::Export) {
-        DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
-        editor->drawText("Please enter a level name", {120, (float) yBase});
-        editor->drawText(editor->levelName, {130, (float) yBase+FONT_SIZE+FONT_SIZE/2});
-        DrawRectangleLines(120, yBase+FONT_SIZE, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
-
-        editor->drawText("Export type", {120, (float)yBase+FONT_SIZE*4});
-        DrawRectangleLines(120, yBase+FONT_SIZE*5, WINDOW_WIDTH-240, FONT_SIZE*2, BLACK);
-        editor->drawText(exporters[selectedExporter]->getName(), {120+FONT_SIZE/2, (float)yBase+FONT_SIZE*5+FONT_SIZE/2});
-
-        editor->drawText("Export", {120+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
-        editor->drawText("Cancel", {(float) 120+75*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*8+FONT_SIZE/2});
-
-        switch(exportWindowSelectedOption) {
-            case 0:
-                DrawRectangleLines(120, yBase+FONT_SIZE*8, 75*scale, FONT_SIZE*2, BLACK);
-                break;
-            case 1:
-                DrawRectangleLines(120 + 75 * scale + FONT_SIZE, yBase+FONT_SIZE*8, 75*scale, FONT_SIZE*2, BLACK);
-                break;
+void drawWindows(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
+    switch (editor->state) {
+        case EditorState::Closing: {
+            windows->exitWindow.draw();
+            break;
         }
-
-    } else if (editor->state == EditorState::Closing) {
-        DrawRectangle(100, 100, WINDOW_WIDTH - 200, WINDOW_HEIGHT - 200, RAYWHITE);
-        editor->drawText("Please enter a level name", {120, (float) yBase});
-        editor->drawText(editor->levelName, {130, (float) yBase+FONT_SIZE+FONT_SIZE/2});
-        DrawRectangleLines(120, yBase+FONT_SIZE, WINDOW_WIDTH-240, FONT_SIZE*2, editor->levelnameError ? RED : BLACK);
-
-        int yOffset = 5;
-        editor->drawText("Save & Exit", {120+FONT_SIZE/2, (float) yBase+FONT_SIZE*yOffset+FONT_SIZE/2});
-        editor->drawText("Close without saving", {(float) 120+75*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*yOffset+FONT_SIZE/2});
-        editor->drawText("Cancel", {(float) 120+75*scale+FONT_SIZE+120*scale+FONT_SIZE+FONT_SIZE/2, (float) yBase+FONT_SIZE*yOffset+FONT_SIZE/2});
-
-        switch(exitWindowSelectedOption) {
-            case 0:
-                DrawRectangleLines(120, yBase+FONT_SIZE*yOffset, 75*scale, FONT_SIZE*2, BLACK);
-                break;
-            case 1:
-                DrawRectangleLines(120 + 75 * scale + FONT_SIZE, yBase+FONT_SIZE*yOffset, 120*scale, FONT_SIZE*2, BLACK);
-                break;
-            case 2:
-                DrawRectangleLines(120 + 75 * scale + FONT_SIZE + 120 * scale + FONT_SIZE, yBase + FONT_SIZE * yOffset, 60 * scale, FONT_SIZE * 2, BLACK);
-                break;
+        case EditorState::Export: {
+            windows->exportWindow.draw();
+            break;
         }
-
+        case EditorState::BlockTypeEditor: {
+            windows->blockTypeEditorWindow.draw();
+            break;
+        }
+        case EditorState::KeyValueEditor: {
+            windows->keyValueEditorWindow.draw();
+            break;
+        }
+        default: {}
     }
 }
 
 int main(int argc, char **argv) {
-    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Level Editor");
-    SetTargetFPS(60);
-
-    // So ESCAPE isn't eaten by ShouldWindowClose();
-    SetExitKey(KEY_NULL);
-
-    Font fontDefault = LoadFontEx("assets/fonts/OverpassMono/OverpassMono-Regular.ttf", FONT_SIZE, 0, 0);
-    SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
-
-    
     CppExporter cppExport;
     LvlExporter lvlExport;
 
@@ -819,9 +391,24 @@ int main(int argc, char **argv) {
     editor.state = EditorState::Editing;
     editor.keyOrValue = KeyOrValue::Key;
     editor.selectedObject = -1;
-    editor.editKeyValueIndex = 0;
-    editor.editBlockTypeIndex = 0;
-    editor.defaultFont = fontDefault;
+    editor.editKeyValueIndex = -1;
+    editor.editBlockTypeIndex = -1;
+    editor.selectedExporter = 0;
+    editor.windowWidth = 1600;
+    editor.windowHeight = 1000;
+    editor.fontSize = 20;
+    editor.cameraTarget = {editor.windowWidth/2.0f, editor.windowHeight/2.0f};
+    editor.closeEditor = false;
+
+    InitWindow((int) editor.windowWidth, (int) editor.windowHeight, "Level Editor");
+    SetTargetFPS(60);
+
+    // So ESCAPE isn't eaten by ShouldWindowClose();
+    SetExitKey(KEY_NULL);
+
+    Font fontDefault = LoadFontEx("assets/fonts/OverpassMono/OverpassMono-Regular.ttf", editor.fontSize, 0, 0);
+    SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
+    GuiSetFont(fontDefault);
 
     vector<Exporter*> exporters = {
         &lvlExport,
@@ -831,20 +418,30 @@ int main(int argc, char **argv) {
     if (argc > 1) {
         filename = argv[1];
         loadLevel(&editor);
+    } else {
+        filename = "TestLevel1.lvl";
+        loadLevel(&editor);
     }
 
+    Windows windows = {
+        ExportWindow(&editor, exporters),
+        ExitWindow(&editor, exporters[0]),
+        BlockTypeEditorWindow(&editor),
+        KeyValueEditorWindow(&editor)
+    };
+
     Camera2D camera = {};
-    camera.target = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
-    camera.offset = (Vector2){WINDOW_WIDTH/2.0f, WINDOW_HEIGHT/2.0f};
+    camera.target = (Vector2){editor.windowWidth/2.0f, editor.windowHeight/2.0f};
+    camera.offset = (Vector2){editor.windowWidth/2.0f, editor.windowHeight/2.0f};
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
 
     if (editor.objects.size() > 0) {
-        cameraTarget = {(float) editor.objects[0].x, (float) editor.objects[0].y};
+        editor.cameraTarget = Vector2 {(float) editor.objects[0].x, (float) editor.objects[0].y};
     }
 
-    while (!closeEditor) {
-        control(&editor, exporters);
+    while (!editor.closeEditor) {
+        control(&editor, &windows, exporters);
 
         camera.zoom += cameraZoom;
         if (camera.zoom > 2.0f) {
@@ -856,7 +453,7 @@ int main(int argc, char **argv) {
             camera.zoom = cameraZoom;
         }
 
-        camera.target = cameraTarget;
+        camera.target = editor.cameraTarget;
 
         BeginDrawing();
             BeginMode2D(camera);
@@ -864,9 +461,7 @@ int main(int argc, char **argv) {
                 drawObjects(&camera, &editor);
             EndMode2D();
             drawMenu(&editor);
-            drawWindows(&editor, exporters);
-            drawKeyValueList(&editor);
-            drawBlockTypeEditor(&editor);
+            drawWindows(&editor, &windows, exporters);
         EndDrawing();
 
         camera.zoom = 0;

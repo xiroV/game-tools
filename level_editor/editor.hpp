@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <string>
-#include <raylib.h>
+#include "lib/raylib/src/raylib.h"
 
 using namespace std;
 
@@ -36,10 +36,8 @@ struct Object {
 enum class EditorState {
     Editing,
     Closing,
-    ShowKeyValue,
-    EditKeyValue,
-    ShowBlockTypes,
-    EditBlockTypes,
+    KeyValueEditor,
+    BlockTypeEditor,
     Export
 };
 
@@ -54,12 +52,17 @@ struct Editor {
     char outputDelimiter;
     int version;
     bool levelnameError;
-    Font defaultFont;
     string levelName;
     vector<ObjectType> objectTypes = {
         {"Block", RED},
         {"Spawn", BLUE}
     };
+    int selectedExporter;
+    float windowWidth;
+    float windowHeight;
+    int fontSize;
+    Vector2 cameraTarget;
+    bool closeEditor;
 
     void drawText(string text, Vector2 position, Color color = BLACK);
 };
