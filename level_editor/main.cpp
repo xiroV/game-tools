@@ -404,7 +404,7 @@ int main(int argc, char **argv) {
     SetTargetFPS(60);
 
     // So ESCAPE isn't eaten by ShouldWindowClose();
-    SetExitKey(KEY_F10);
+    SetExitKey(KEY_NULL);
 
     Font fontDefault = LoadFontEx("assets/fonts/OverpassMono/OverpassMono-Regular.ttf", editor.fontSize, 0, 0);
     SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
