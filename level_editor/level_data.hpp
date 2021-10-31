@@ -12,7 +12,7 @@ struct ObjectData {
 };
 
 struct LevelObject {
-    int x, y, width, height;
+    int x, y, width, height, rotation;
     std::string type;
     std::vector<ObjectData> data;
 };
