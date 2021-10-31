@@ -39,7 +39,7 @@ struct WindowFunctions {
         };
         this->dotList = {'.', 0};
         this->illegalPathCharacters = {'!', '"', '#', '%', '&', '\'', '(', ')', '*', '+', ',', '/', ':', ';', '<', '=', '>', '?', '[', '\\', ']', '^', '`', '{', '|', '}', 0};
-        this->illegalExportCharacters = {'"', '=', ';'};
+        this->illegalExportCharacters = {'"', '=', ';', 0};
     }
 
 
