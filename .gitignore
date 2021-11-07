@@ -36,3 +36,5 @@ bin/
 
 level_editor/editor
 .vscode/
+
+.DS_Store

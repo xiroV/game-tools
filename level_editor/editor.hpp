@@ -63,6 +63,7 @@ struct Editor {
     int fontSize;
     Vector2 cameraTarget;
     bool closeEditor;
+    bool showGrid;
 
     void drawText(string text, Vector2 position, Color color = BLACK);
 };
