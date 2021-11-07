@@ -26,7 +26,7 @@ const int MOVE_INTERVAL = 10;
 const int ROTATION_INTERVAL = 15;
 const int RESIZE_INTERVAL = 50;
 const int CAMERA_MOVE_SPEED = 5;
-const int GRID_DISTANCE = 25;
+const int GRID_DISTANCE = 40;
 
 float cameraZoom = 1.0f;
 
@@ -181,6 +181,10 @@ void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
                 editor->state = EditorState::BlockTypeEditor;
             }
 
+            if (IsKeyPressed(KEY_G)) {
+                editor->showGrid = !editor->showGrid;
+            }
+
             // NEW OBJECT
             if (IsKeyPressed(KEY_N)) {
                 Object obj = {(int) editor->windowWidth/2-50, (int) editor->windowHeight/2-50, 100, 100, 0};
@@ -312,7 +316,7 @@ void drawRect(float x, float y, float width, float height, float rotation, Color
 void drawMenu(Editor *editor) {
     int xpos = editor->windowWidth-editor->fontSize*8;
 
-    vector<const char*> entries = {
+    static std::array<const char*, 10> entries = {
         "[n] new",
         "[arrows] move",
         "[wasd] resize",
@@ -321,7 +325,8 @@ void drawMenu(Editor *editor) {
         "[page/up] zoom",
         "[y] edit types",
         "[v] key/values",
-        "[m] export"
+        "[m] export",
+        "[g] hide grid"
     };
 
     int ypos = 10;
@@ -383,6 +388,20 @@ void drawWindows(Editor *editor, Windows *windows, vector<Exporter*> exporters) 
             break;
         }
         default: {}
+    }
+}
+
+void drawGrid(Editor &editor, Camera2D &camera) {
+    if (editor.showGrid) {   
+        int yOffset = ((int) camera.target.y) % GRID_DISTANCE;
+        for (int i = 0; i < editor.windowHeight + yOffset; i += GRID_DISTANCE) {
+            DrawLine(0, i - yOffset, editor.windowWidth, i- yOffset, GRAY);
+        }
+
+        int xOffset = ((int) camera.target.x) % GRID_DISTANCE;
+        for (int j = 0; j < editor.windowWidth + xOffset; j += GRID_DISTANCE) {
+            DrawLine(j - xOffset, 0, j - xOffset, editor.windowHeight, GRAY);
+        }
     }
 }
 
@@ -463,21 +482,13 @@ int main(int argc, char **argv) {
 
         BeginDrawing();
             ClearBackground(DARKGRAY);
-            if (editor.showGrid) {   
-                int count = 0;
-                for (int i = 1; i < editor.windowHeight; i += GRID_DISTANCE) {
-                    DrawLine(0, i, editor.windowWidth, i, RED);
-                }
-
-                for (int j = 0; j < editor.windowWidth; j += GRID_DISTANCE) {
-                    DrawLine(j, 0, j, editor.windowHeight, RED);
-                }
-            }
+            drawGrid(editor, camera);
             BeginMode2D(camera);
                 drawObjects(&camera, &editor);
             EndMode2D();
             drawMenu(&editor);
             drawWindows(&editor, &windows, exporters);
+            DrawFPS(20, 20);
         EndDrawing();
 
         camera.zoom = 0;
