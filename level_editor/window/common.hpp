@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-
+#include <cstring>
 
 struct WindowFunctions {
     std::vector<char> illegalPathCharacters;
@@ -55,15 +55,15 @@ struct WindowFunctions {
 
     bool anyMatch(char key, std::vector<char> illegalChars) {
         // Currently REQUIRES final entry in array is 0.
-        for (int i = 0; illegalChars[i] != 0; i++) {
+        for (unsigned int i = 0; illegalChars[i] != 0; i++) {
             if (illegalChars[i] == key) return true;
         }
         return false;
     }
 
     void replaceIllegalPathChars(char* str) {
-        const int strSize = sizeof(str) / sizeof((str)[0]);
-        for (int i = strSize; i >= 0; i--) {
+        const int strSize = strlen(str);
+        for (unsigned int i = strSize; i >= 0; i--) {
             if (anyMatch(str[i], illegalPathCharacters)) {
                 str[i] = '\0';
                 break;
@@ -72,8 +72,8 @@ struct WindowFunctions {
     }
 
     void replaceIllegalExportChars(char* str) {
-        const int strSize = sizeof(str) / sizeof((str)[0]);
-        for (int i = strSize; i >= 0; i--) {
+        const int strSize = strlen(str);
+        for (unsigned int i = strSize; i >= 0; i--) {
             if (anyMatch(str[i], illegalExportCharacters)) {
                 str[i] = '\0';
                 break;
@@ -82,7 +82,7 @@ struct WindowFunctions {
     }
 
     bool isIllegalName(char* str) {
-        for (int i = 0; i < illegalFileNames.size(); i++) {
+        for (unsigned int i = 0; i < illegalFileNames.size(); i++) {
             std::string lower = toLowerCase(str);
             if (str == illegalFileNames[i]) {
                 return true;
