@@ -26,6 +26,7 @@ const int MOVE_INTERVAL = 10;
 const int ROTATION_INTERVAL = 15;
 const int RESIZE_INTERVAL = 50;
 const int CAMERA_MOVE_SPEED = 5;
+const int GRID_DISTANCE = 25;
 
 float cameraZoom = 1.0f;
 
@@ -403,6 +404,7 @@ int main(int argc, char **argv) {
     editor.fontSize = 20;
     editor.cameraTarget = {editor.windowWidth/2.0f, editor.windowHeight/2.0f};
     editor.closeEditor = false;
+    editor.showGrid = true;
 
     InitWindow((int) editor.windowWidth, (int) editor.windowHeight, "Level Editor");
     SetTargetFPS(60);
@@ -435,8 +437,8 @@ int main(int argc, char **argv) {
     };
 
     Camera2D camera = {};
-    camera.target = (Vector2){editor.windowWidth/2.0f, editor.windowHeight/2.0f};
-    camera.offset = (Vector2){editor.windowWidth/2.0f, editor.windowHeight/2.0f};
+    camera.target = Vector2{editor.windowWidth/2.0f, editor.windowHeight/2.0f};
+    camera.offset = Vector2{editor.windowWidth/2.0f, editor.windowHeight/2.0f};
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
 
@@ -460,8 +462,18 @@ int main(int argc, char **argv) {
         camera.target = editor.cameraTarget;
 
         BeginDrawing();
+            ClearBackground(DARKGRAY);
+            if (editor.showGrid) {   
+                int count = 0;
+                for (int i = 1; i < editor.windowHeight; i += GRID_DISTANCE) {
+                    DrawLine(0, i, editor.windowWidth, i, RED);
+                }
+
+                for (int j = 0; j < editor.windowWidth; j += GRID_DISTANCE) {
+                    DrawLine(j, 0, j, editor.windowHeight, RED);
+                }
+            }
             BeginMode2D(camera);
-                ClearBackground(DARKGRAY);
                 drawObjects(&camera, &editor);
             EndMode2D();
             drawMenu(&editor);
