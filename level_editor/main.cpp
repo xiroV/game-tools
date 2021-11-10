@@ -7,6 +7,7 @@
 #include "editor.hpp"
 #include "export/cpp.hpp"
 #include "export/lvl.hpp"
+#include "export/swift.hpp"
 
 #ifndef RAYGUI
 #define RAYGUI
@@ -388,6 +389,7 @@ void drawWindows(Editor *editor, Windows *windows, vector<Exporter*> exporters) 
 int main(int argc, char **argv) {
     CppExporter cppExport;
     LvlExporter lvlExport;
+    SwiftExporter swiftExport;
 
     Editor editor = {};
     editor.version = 1;
@@ -416,7 +418,8 @@ int main(int argc, char **argv) {
 
     vector<Exporter*> exporters = {
         &lvlExport,
-        &cppExport
+        &cppExport,
+        &swiftExport
     };
 
     if (argc > 1) {
