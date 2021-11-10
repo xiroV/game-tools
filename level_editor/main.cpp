@@ -317,7 +317,7 @@ void drawRect(float x, float y, float width, float height, float rotation, Color
 void drawMenu(Editor *editor) {
     int xpos = editor->windowWidth-editor->fontSize*8;
 
-    static std::array<const char*, 10> entries = {
+    static std::array<const char*, 10> entries = {{
         "[n] new",
         "[arrows] move",
         "[wasd] resize",
@@ -328,7 +328,7 @@ void drawMenu(Editor *editor) {
         "[v] key/values",
         "[m] export",
         "[g] hide grid"
-    };
+    }};
 
     int ypos = 10;
     for (unsigned int i = 0; i < entries.size(); i++) {
