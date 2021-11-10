@@ -2,7 +2,7 @@ class ObjectData {
     let key: String 
     let value: String
 
-    init(key: String, value: String) {
+    init(_ key: String, _ value: String) {
         self.key = key
         self.value = value
     }
