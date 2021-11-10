@@ -70,7 +70,6 @@ struct ExportWindow {
             }
         }
 
-
         func.replaceIllegalPathChars(levelName);
         levelNameError = func.isIllegalName(levelName);
     }

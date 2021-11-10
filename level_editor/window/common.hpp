@@ -55,7 +55,7 @@ struct WindowFunctions {
 
     bool anyMatch(char key, std::vector<char> illegalChars) {
         // Currently REQUIRES final entry in array is 0.
-        for (unsigned int i = 0; illegalChars[i] != 0; i++) {
+        for (int i = 0; illegalChars[i] != 0; i++) {
             if (illegalChars[i] == key) return true;
         }
         return false;
@@ -63,7 +63,7 @@ struct WindowFunctions {
 
     void replaceIllegalPathChars(char* str) {
         const int strSize = strlen(str);
-        for (unsigned int i = strSize; i >= 0; i--) {
+        for (int i = strSize; i >= 0; i--) {
             if (anyMatch(str[i], illegalPathCharacters)) {
                 str[i] = '\0';
                 break;
