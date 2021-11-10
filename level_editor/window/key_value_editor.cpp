@@ -99,38 +99,36 @@ struct KeyValueEditorWindow {
 
 
         int offsetY = 200;
-        int currentIndex = 0;
         bool editing;
 
-        for (auto &key: keys) {
+        for (unsigned int i = 0; i < keys.size(); i++) {
             editing = false;
 
-            if (currentIndex == editIndex) {
+            if (i == (unsigned int) editIndex) {
                 editing = true;
             }
         
             if (GuiTextBox(
                 {130, (float) offsetY, (float) editor->windowWidth / 2 - 130, (float) editor->fontSize*2},
-                keys[currentIndex],
+                keys[i],
                 64,
                 editing && editor->keyOrValue == KeyOrValue::Key
             )) {
-                editIndex = currentIndex;
+                editIndex = i;
                 editor->keyOrValue = KeyOrValue::Key;
             }
 
             if (GuiTextBox(
                 {editor->windowWidth / 2 + 30, (float) offsetY, editor->windowWidth / 2 - 160, (float) editor->fontSize*2},
-                values[currentIndex],
+                values[i],
                 64,
                 editing && editor->keyOrValue == KeyOrValue::Value
             )) {
-                editIndex = currentIndex;
+                editIndex = i;
                 editor->keyOrValue = KeyOrValue::Value;
             }
 
             offsetY += editor->fontSize * 2 + 5;
-            currentIndex++;
         }
     }
 
