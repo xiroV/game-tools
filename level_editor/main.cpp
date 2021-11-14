@@ -42,10 +42,6 @@ struct Windows {
 
 string filename = "";
 
-void Editor::drawText(string text, Vector2 position, Color color) {
-    DrawText(text.c_str(), position.x, position.y, (float) this->fontSize, color);
-}
-
 void loadLevel(Editor *editor) {
     int version = 0;
 
@@ -314,8 +310,8 @@ void drawRect(float x, float y, float width, float height, float rotation, Color
     );
 }
 
-void drawMenu(Editor *editor) {
-    int xpos = editor->windowWidth-editor->fontSize*8;
+void drawHelp(Editor *editor) {
+    int xpos = editor->windowWidth-editor->fontSize*8-30;
 
     static std::array<const char*, 10> entries = {{
         "[n] new",
@@ -327,19 +323,25 @@ void drawMenu(Editor *editor) {
         "[y] edit types",
         "[v] key/values",
         "[m] export",
-        "[g] hide grid"
+        "[g] toggle grid"
     }};
 
-    int ypos = 10;
-    for (unsigned int i = 0; i < entries.size(); i++) {
-        editor->drawText(entries[i], {(float) xpos, (float) ypos}, LIGHTGRAY);
-        ypos += 8+editor->fontSize;
+    if (editor->showHelp) {
+        editor->showHelp = !GuiWindowBox({(float) xpos-10, 10, 190, 330}, "Help");
+
+        int ypos = 50;
+        for (unsigned int i = 0; i < entries.size(); i++) {
+            GuiLabel({(float) xpos, (float) ypos, 100, 20}, entries[i]);
+            ypos += 8+editor->fontSize;
+        }
+    } else {
+        editor->showHelp = GuiButton({(float) xpos+150, 10, 30, 30}, "?");
     }
 
     if (isElementSelected(editor)) {
-        editor->drawText(
-            editor->objectTypes[editor->objects[editor->selectedObject].type].name,
-            { 20, editor->windowHeight - 30},
+        DrawText(
+            editor->objectTypes[editor->objects[editor->selectedObject].type].name.c_str(),
+            20, editor->windowHeight - 30, editor->fontSize,
             editor->objectTypes[editor->objects[editor->selectedObject].type].color
         );
     }
@@ -393,15 +395,16 @@ void drawWindows(Editor *editor, Windows *windows, vector<Exporter*> exporters) 
 }
 
 void drawGrid(Editor &editor, Camera2D &camera) {
+    Color color = { 255, 255, 255, 20 };
     if (editor.showGrid) {   
         int yOffset = ((int) camera.target.y) % GRID_DISTANCE;
         for (int i = 0; i < editor.windowHeight + yOffset; i += GRID_DISTANCE) {
-            DrawLine(0, i - yOffset, editor.windowWidth, i- yOffset, GRAY);
+            DrawLine(0, i - yOffset, editor.windowWidth, i- yOffset, color);
         }
 
         int xOffset = ((int) camera.target.x) % GRID_DISTANCE;
         for (int j = 0; j < editor.windowWidth + xOffset; j += GRID_DISTANCE) {
-            DrawLine(j - xOffset, 0, j - xOffset, editor.windowHeight, GRAY);
+            DrawLine(j - xOffset, 0, j - xOffset, editor.windowHeight, color);
         }
     }
 }
@@ -426,6 +429,7 @@ int main(int argc, char **argv) {
     editor.cameraTarget = {editor.windowWidth/2.0f, editor.windowHeight/2.0f};
     editor.closeEditor = false;
     editor.showGrid = true;
+    editor.showHelp = false;
 
     InitWindow((int) editor.windowWidth, (int) editor.windowHeight, "Level Editor");
     SetTargetFPS(60);
@@ -489,7 +493,7 @@ int main(int argc, char **argv) {
             BeginMode2D(camera);
                 drawObjects(&camera, &editor);
             EndMode2D();
-            drawMenu(&editor);
+            drawHelp(&editor);
             drawWindows(&editor, &windows, exporters);
             DrawFPS(20, 20);
         EndDrawing();
