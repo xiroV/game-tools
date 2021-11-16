@@ -24,12 +24,16 @@
 using namespace std;
 
 const int MOVE_INTERVAL = 10;
+const int MOVE_DELAY = 5;
+const int MOVE_HOLD_DELAY = 40;
 const int ROTATION_INTERVAL = 15;
 const int RESIZE_INTERVAL = 50;
 const int CAMERA_MOVE_SPEED = 5;
-const int GRID_DISTANCE = 40;
+const int GRID_DISTANCE = 50;
 
 float cameraZoom = 1.0f;
+float timeSinceLastMove = 0;
+float timeSinceLastMovePress = 0;
 
 int exitWindowSelectedOption = 0;
 
@@ -123,7 +127,6 @@ bool isElementSelected(Editor *editor) {
 }
 
 void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
-
     if (IsKeyDown(KEY_LEFT_ALT) && IsKeyDown(KEY_F4)) {
         if (isElementSelected(editor)) {
             editor->selectedObject = -1;
@@ -204,22 +207,71 @@ void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
             }
 
             if (isElementSelected(editor)) {
+                bool upPressed = IsKeyPressed(KEY_UP);
+                bool downPressed = IsKeyPressed(KEY_DOWN);
+                bool leftPressed = IsKeyPressed(KEY_LEFT);
+                bool rightPressed = IsKeyPressed(KEY_RIGHT);
+                bool isMoveDown = IsKeyDown(KEY_UP) || IsKeyDown(KEY_DOWN) ||
+                    IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_RIGHT);
+
                 // MOVEMENT
-                if (IsKeyPressed(KEY_UP)) {
+                if (upPressed) {
                     editor->objects[editor->selectedObject].y -= MOVE_INTERVAL;
+                    timeSinceLastMovePress = 0;
                 }
 
-                if (IsKeyPressed(KEY_DOWN)) {
+                if (downPressed) {
                     editor->objects[editor->selectedObject].y += MOVE_INTERVAL;
+                    timeSinceLastMovePress = 0;
                 }
 
-                if (IsKeyPressed(KEY_LEFT)) {
+                if (leftPressed) {
                     editor->objects[editor->selectedObject].x -= MOVE_INTERVAL;
+                    timeSinceLastMovePress = 0;
                 }
 
-                if (IsKeyPressed(KEY_RIGHT)) {
+                if (rightPressed) {
                     editor->objects[editor->selectedObject].x += MOVE_INTERVAL;
+                    timeSinceLastMovePress = 0;
                 }
+
+                if (timeSinceLastMovePress > MOVE_HOLD_DELAY) {
+                    if (IsKeyDown(KEY_UP) && !upPressed) {
+                        if (timeSinceLastMove > MOVE_DELAY) {
+                            editor->objects[editor->selectedObject].y -= MOVE_INTERVAL;
+                        }
+                    }
+
+                    if (IsKeyDown(KEY_DOWN) && !downPressed) {
+                        if (timeSinceLastMove > MOVE_DELAY) {
+                            editor->objects[editor->selectedObject].y += MOVE_INTERVAL;
+                        }
+                    }
+
+                    if (IsKeyDown(KEY_LEFT) && !leftPressed) {
+                        if (timeSinceLastMove > MOVE_DELAY) {
+                            editor->objects[editor->selectedObject].x -= MOVE_INTERVAL;
+                        }
+                    }
+
+                    if (IsKeyDown(KEY_RIGHT) && !rightPressed) {
+                        if (timeSinceLastMove > MOVE_DELAY) {
+                            editor->objects[editor->selectedObject].x += MOVE_INTERVAL;
+                        }
+                    }
+                }
+
+                if (isMoveDown) {
+                    timeSinceLastMovePress += GetFrameTime() * 100;
+                    if (timeSinceLastMove > MOVE_DELAY) {
+                        timeSinceLastMove = 0;
+                    } else {
+                         timeSinceLastMove += GetFrameTime() * 100; 
+                    }
+                } else {
+                    timeSinceLastMove = 0;
+                }
+                
 
                 // RESIZING
                 if (IsKeyPressed(KEY_S)) {
