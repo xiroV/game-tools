@@ -23,8 +23,13 @@ struct KeyValueEditorWindow {
     }
 
     void control() {
+        if (!loaded) {
+            reload();
+        }
+
         if (IsKeyPressed(KEY_N) && editIndex < 0) {
             editor->objects[editor->selectedObject].data.push_back({"", ""});
+            editIndex = editor->objects[editor->selectedObject].data.size() - 1;
             reload();
         } 
 
@@ -139,7 +144,6 @@ struct KeyValueEditorWindow {
                 editor->objects[editor->selectedObject].data[i].key = string { keys[i] };
                 editor->objects[editor->selectedObject].data[i].value = string { values[i] };
             }
-
         }
 
         void reload() {

@@ -73,7 +73,7 @@ struct WindowFunctions {
 
     void replaceIllegalExportChars(char* str) {
         const int strSize = strlen(str);
-        for (unsigned int i = strSize; i >= 0; i--) {
+        for (int i = strSize; i >= 0; i--) {
             if (anyMatch(str[i], illegalExportCharacters)) {
                 str[i] = '\0';
                 break;
