@@ -121,9 +121,18 @@ void loadLevel(Editor *editor) {
     cout << "Loaded " << editor->objects.size() << " objects" << endl;
 }
 
-
 bool isElementSelected(Editor *editor) {
     return editor->selectedObject >= 0 && editor->selectedObject < (int) editor->objects.size();
+}
+
+void copyBlock(Editor *editor) {
+    if (isElementSelected(editor)) {
+        const auto selectedObject = editor->objects[editor->selectedObject];
+        Object obj = {selectedObject.x, selectedObject.y, selectedObject.width, selectedObject.height, selectedObject.rotation};
+        obj.data = selectedObject.data;
+        editor->objects.push_back(obj);
+        editor->selectedObject = editor->objects.size() - 1;
+    }
 }
 
 void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
@@ -304,6 +313,9 @@ void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
                     editor->objects[editor->selectedObject].rotation = (editor->objects[editor->selectedObject].rotation + ROTATION_INTERVAL) % 360;
                 }
 
+                if (IsKeyPressed(KEY_C)) {
+                    copyBlock(editor);
+                }
 
                 // DELETE
                 if (IsKeyPressed(KEY_DELETE)) {
@@ -365,7 +377,7 @@ void drawRect(float x, float y, float width, float height, float rotation, Color
 void drawHelp(Editor *editor) {
     int xpos = editor->windowWidth-editor->fontSize*8-30;
 
-    static std::array<const char*, 10> entries = {{
+    static std::array<const char*, 11> entries = {{
         "[n] new",
         "[arrows] move",
         "[wasd] resize",
@@ -375,7 +387,8 @@ void drawHelp(Editor *editor) {
         "[y] edit types",
         "[v] key/values",
         "[m] export",
-        "[g] toggle grid"
+        "[g] toggle grid",
+        "[c] copy block"
     }};
 
     if (editor->showHelp) {
