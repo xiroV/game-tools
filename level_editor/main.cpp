@@ -23,13 +23,13 @@
 
 using namespace std;
 
-const int MOVE_INTERVAL = 10;
-const int MOVE_DELAY = 5;
-const int MOVE_HOLD_DELAY = 40;
-const int ROTATION_INTERVAL = 15;
-const int RESIZE_INTERVAL = 50;
-const int CAMERA_MOVE_SPEED = 5;
-const int GRID_DISTANCE = 50;
+constexpr int MOVE_INTERVAL = 10;
+constexpr int MOVE_DELAY = 5;
+constexpr int MOVE_HOLD_DELAY = 40;
+constexpr int ROTATION_INTERVAL = 15;
+constexpr int RESIZE_INTERVAL = 50;
+constexpr int CAMERA_MOVE_SPEED = 5;
+constexpr int GRID_DISTANCE = 50;
 
 float cameraZoom = 1.0f;
 float timeSinceLastMove = 0;
@@ -45,6 +45,10 @@ struct Windows {
 };
 
 string filename = "";
+
+void addMessage(Editor *editor, std::string message, float expiration, MessageType type) {
+    editor->messages.emplace_back(EditorMessage{message, expiration, type});
+}
 
 void loadLevel(Editor *editor) {
     int version = 0;
@@ -113,12 +117,14 @@ void loadLevel(Editor *editor) {
             editor->objects.push_back(obj);
         }
     } else {
-        cout << "Unable to open file" << endl; 
+        addMessage(editor, "Unable to open file\n", 5, ERROR); 
     }
 
     levelFile.close();
 
-    cout << "Loaded " << editor->objects.size() << " objects" << endl;
+    char buffer[50];
+    sprintf(buffer, "Loaded %lu objects\n", editor->objects.size());
+    addMessage(editor, buffer, 5, SUCCESS);
 }
 
 bool isElementSelected(Editor *editor) {
@@ -132,6 +138,9 @@ void copyBlock(Editor *editor) {
         obj.data = selectedObject.data;
         editor->objects.push_back(obj);
         editor->selectedObject = editor->objects.size() - 1;
+        addMessage(editor, "Block copied\n", 3, SUCCESS);
+    } else {
+        addMessage(editor, "No block selected\n", 3, ERROR);
     }
 }
 
@@ -213,6 +222,10 @@ void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
                     }
                             
                 }
+            }
+
+            if (IsKeyPressed(KEY_C)) {
+                copyBlock(editor);
             }
 
             if (isElementSelected(editor)) {
@@ -311,10 +324,6 @@ void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
 
                 if (IsKeyPressed(KEY_E)) {
                     editor->objects[editor->selectedObject].rotation = (editor->objects[editor->selectedObject].rotation + ROTATION_INTERVAL) % 360;
-                }
-
-                if (IsKeyPressed(KEY_C)) {
-                    copyBlock(editor);
                 }
 
                 // DELETE
@@ -474,6 +483,42 @@ void drawGrid(Editor &editor, Camera2D &camera) {
     }
 }
 
+void updateEditor(Editor *editor) {
+    const auto delta = GetFrameTime();
+    for (int i = editor->messages.size() - 1; i >= 0; i--) {
+        editor->messages[i].expiration -= delta;
+        if (editor->messages[i].expiration < 0) {
+            editor->messages.erase(editor->messages.begin() + i);
+        }
+    }
+}
+
+Color colorFromType(MessageType type) {
+    switch (type) {
+        case SUCCESS:
+            return GREEN;
+        case ERROR:
+            return RED;
+        case INFO:
+            return WHITE;
+    }
+}
+
+void drawMessages(Editor *editor) {
+    int offsetY = 20;
+    for (int i = editor->messages.size() - 1; i >= 0; i--) {
+        auto c = colorFromType(editor->messages[i].type);
+        DrawText(
+            editor->messages[i].message.c_str(),
+            20, 
+            editor->windowHeight - 30 - offsetY,
+            editor->fontSize,
+            c
+        );
+        offsetY += 20;
+    }
+}
+
 int main(int argc, char **argv) {
     CppExporter cppExport;
     LvlExporter lvlExport;
@@ -561,9 +606,11 @@ int main(int argc, char **argv) {
             drawHelp(&editor);
             drawWindows(&editor, &windows, exporters);
             DrawFPS(20, 20);
+            drawMessages(&editor);
         EndDrawing();
 
         camera.zoom = 0;
+        updateEditor(&editor);
     }
 
     CloseWindow();

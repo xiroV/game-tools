@@ -7,6 +7,18 @@
 
 using namespace std;
 
+enum MessageType {
+    ERROR,
+    INFO,
+    SUCCESS
+};
+
+struct EditorMessage {
+    std::string message;
+    float expiration;
+    MessageType type;
+};
+
 struct ObjectType {
     string name;
     Color color;
@@ -53,6 +65,7 @@ struct Editor {
     int version;
     bool levelnameError;
     string levelName;
+    vector<EditorMessage> messages;
     vector<ObjectType> objectTypes = {
         {"Block", RED},
         {"Spawn", BLUE}
