@@ -501,6 +501,8 @@ Color colorFromType(MessageType type) {
             return RED;
         case INFO:
             return WHITE;
+        default:
+            return WHITE;
     }
 }
 
