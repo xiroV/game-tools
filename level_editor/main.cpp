@@ -408,15 +408,15 @@ void drawHelp(Editor *editor) {
     }};
 
     if (editor->showHelp) {
-        editor->showHelp = !GuiWindowBox({(float) xpos-50, 10, 230, 410}, "Help");
+        editor->showHelp = !GuiWindowBox({(float) xpos - 50, 10, 230, 432}, "Help");
 
         int ypos = 50;
         for (unsigned int i = 0; i < entries.size(); i++) {
             GuiLabel({(float) xpos-40, (float) ypos, 100, 20}, entries[i]);
-            ypos += 8+editor->fontSize;
+            ypos += 8 + editor->fontSize;
         }
     } else {
-        editor->showHelp = GuiButton({(float) xpos+150, 10, 30, 30}, "?");
+        editor->showHelp = GuiButton({(float) xpos + 150, 10, 30, 30}, "?");
     }
 
     if (isElementSelected(editor)) {
