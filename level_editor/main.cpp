@@ -386,8 +386,9 @@ void drawRect(float x, float y, float width, float height, float rotation, Color
 void drawHelp(Editor *editor) {
     int xpos = editor->windowWidth-editor->fontSize*8-30;
 
-    static std::array<const char*, 11> entries = {{
+    static std::array<const char*, 13> entries = {{
         "[n] new",
+        "[tab] cycle objects",
         "[arrows] move",
         "[wasd] resize",
         "[del] delete",
@@ -397,15 +398,16 @@ void drawHelp(Editor *editor) {
         "[v] key/values",
         "[m] export",
         "[g] toggle grid",
-        "[c] copy block"
+        "[c] copy block",
+        "[esc] deselect/exit"
     }};
 
     if (editor->showHelp) {
-        editor->showHelp = !GuiWindowBox({(float) xpos-10, 10, 190, 330}, "Help");
+        editor->showHelp = !GuiWindowBox({(float) xpos-50, 10, 230, 410}, "Help");
 
         int ypos = 50;
         for (unsigned int i = 0; i < entries.size(); i++) {
-            GuiLabel({(float) xpos, (float) ypos, 100, 20}, entries[i]);
+            GuiLabel({(float) xpos-40, (float) ypos, 100, 20}, entries[i]);
             ypos += 8+editor->fontSize;
         }
     } else {
