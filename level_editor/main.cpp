@@ -156,6 +156,10 @@ void control(Editor *editor, Windows *windows, vector<Exporter*> exporters) {
     if (WindowShouldClose()) {
         editor->state = EditorState::Closing;
     }
+
+    if (IsKeyPressed(KEY_F10)) {
+        editor->showFPS = !editor->showFPS;
+    }
     
     switch (editor->state) {
         case EditorState::Closing: {
@@ -386,7 +390,7 @@ void drawRect(float x, float y, float width, float height, float rotation, Color
 void drawHelp(Editor *editor) {
     int xpos = editor->windowWidth-editor->fontSize*8-30;
 
-    static std::array<const char*, 13> entries = {{
+    static std::array<const char*, 14> entries = {{
         "[n] new",
         "[tab] cycle objects",
         "[arrows] move",
@@ -399,7 +403,8 @@ void drawHelp(Editor *editor) {
         "[m] export",
         "[g] toggle grid",
         "[c] copy block",
-        "[esc] deselect/exit"
+        "[esc] deselect/exit",
+        "[F10] toggle FPS"
     }};
 
     if (editor->showHelp) {
@@ -544,6 +549,7 @@ int main(int argc, char **argv) {
     editor.closeEditor = false;
     editor.showGrid = true;
     editor.showHelp = false;
+    editor.showFPS = false;
 
     InitWindow((int) editor.windowWidth, (int) editor.windowHeight, "Level Editor");
     SetTargetFPS(60);
@@ -609,7 +615,7 @@ int main(int argc, char **argv) {
             EndMode2D();
             drawHelp(&editor);
             drawWindows(&editor, &windows, exporters);
-            DrawFPS(20, 20);
+            if (editor.showFPS) DrawFPS(20, 20);
             drawMessages(&editor);
         EndDrawing();
 

@@ -78,6 +78,7 @@ struct Editor {
     bool closeEditor;
     bool showGrid;
     bool showHelp;
+    bool showFPS;
 };
 
 #endif
