@@ -5,12 +5,16 @@ let ConsoleHeightPercent: Float32 = 0.20;
 class QuakeConsole {
     var isOpen: Bool = false;
     var openT: Float32 = 0.0;
-    var currentCommand: [UInt8];
+    var currentCommand: [UInt8] = [];
     var history: [String];
     var currentHistoryEntry = -1;
     
     init() {
-        self.currentCommand[0] = 0;
+        self.isOpen = false
+        self.openT = 0.0
+        self.currentCommand = []
+        self.history = []
+        self.currentHistoryEntry = -1
     }
 
     func update() {
@@ -37,7 +41,7 @@ class QuakeConsole {
 
         if Raylib.isKeyPressed(.enter) {
             if self.currentCommand[0] != 0 {
-                var asString = String(decoding: self.currentCommand, as: UTF8.self)
+                let asString = String(decoding: self.currentCommand, as: UTF8.self)
                 self.history.append(asString);
                 self.currentCommand[0] = 0;
                 self.parseAndExecuteCommand();
@@ -78,7 +82,7 @@ class QuakeConsole {
             }
             self.currentHistoryEntry = -1;
             
-            guard var newKey = Raylib.getCharPressed()?.wholeNumberValue else {
+            guard let newKey = Raylib.getCharPressed()?.wholeNumberValue else {
                 return;
             }
             
@@ -88,7 +92,7 @@ class QuakeConsole {
         if Raylib.isKeyPressed(.backspace) {
             self.currentHistoryEntry = -1;
             var counter = 0;
-            while self.currentCommand[counter] != 0 && counter < self.currentCommand.count + 1 {counter += 1;}
+            while self.currentCommand[counter] != 0 && counter < self.currentCommand.count + 1 {counter += 1}
             if counter != 0 {
                 self.currentCommand[counter - 1] = 0;
             }
@@ -97,10 +101,10 @@ class QuakeConsole {
     }
 
     func render(screenWidth: Int, screenHeight: Int) {
-        var bottom = (ConsoleHeightPercent * Float(screenHeight) * self.openT);
-        Raylib.drawRectangle(0, 0, Int32(screenWidth), Int32(bottom), .brown);
-        bottom -= 28;
-        var isEmpty = self.currentCommand[0] == 0;
+        var bottom = (ConsoleHeightPercent * Float(screenHeight) * self.openT)
+        Raylib.drawRectangle(0, 0, Int32(screenWidth), Int32(bottom), .brown)
+        bottom -= 28
+        let isEmpty = self.currentCommand.isEmpty
         Raylib.drawText(isEmpty ? "Start typing..." : String(decoding: self.currentCommand, as: UTF8.self), 4, Int32(bottom), 24, isEmpty ? .gray : .white);
         for it in 1...self.history.count  {
             bottom -= 28;
@@ -110,9 +114,9 @@ class QuakeConsole {
     }
 
     func parseAndExecuteCommand() {
-        var tokenized = self.history[self.history.count - 1].split(separator: " ");
+        let tokenized = self.history[self.history.count - 1].split(separator: " ");
         if tokenized.count == 0 {return;} // Shouldn't be possible.
-        var first = tokenized[0];
+        let first = tokenized[0];
         switch first {
             case "clear_history":
                 self.history = [];
