@@ -52,28 +52,47 @@ struct EditorMessage {
 }
 
 struct Window {
-    let height: Int32     
     let width: Int32
+    let height: Int32     
+    let title: String
 }
 
-struct Editor {
-    var state: EditorState = .editing 
-    var objects: Array<Object>
-    var selectedObject: Int
-    var keyOrValue: KeyOrValue 
-    var objectTypeParameter: ObjectTypeParameter
-    var editBlockTypeIndex: Int
-    var outputDelimiter: Character
+class Editor {
     var version: Int
-    var levelNameError: Bool
-    var levelName: String
-    var messages: Array<EditorMessage>
+    var state: EditorState = .editing 
+    var objects: Array<Object> = []
+    var selectedObject: Int = -1
+    var editKeyValueIndex: Int = -1
+    var editBlockTypeIndex: Int = -1
+    var keyOrValue: KeyOrValue = .key
+    var objectTypeParameter: ObjectTypeParameter = .name
+    var outputDelimiter: Character
+    var levelNameError: Bool = false
+    var levelName: String = ""
+    var messages: Array<EditorMessage> = []
     var objectTypes: Array<ObjectType> = [
         ObjectType("Block", .red),
         ObjectType("Spawn", .blue)
     ]  
-    var selectedExporter: Int 
+    var selectedExporter: Int = 0
     var window: Window
-    var fontSize: Int
-    var cameraTarget: Bool // TODO(Brian)
+    var fontSize: Int32 = 10
+    var cameraTarget: Vector2
+    var closeEditor: Bool = false
+    var showGrid: Bool = true
+    var showHelp: Bool = true
+    var showFPS: Bool = false
+
+    init (
+        version: Int,
+        outputDelimiter: Character,
+        window: Window,
+        fontSize: Int32
+    ) {
+        self.version = version
+        self.outputDelimiter = outputDelimiter
+        self.window = window
+        self.fontSize = fontSize
+        self.cameraTarget = Vector2(x: Float(window.width/2), y: Float(window.height/2))
+    }
 }
