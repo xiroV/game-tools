@@ -40,9 +40,19 @@ enum MessageType {
 }
 
 struct Object {
-    var x, y, width, height, rotation: Int
+    var x, y, width, height, rotation: Int32
     var type: Int
     var data: Array<ObjectData>
+    
+    init(x: Int32, y: Int32, width: Int32, height: Int32) {
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.rotation = 0
+        self.type = 0
+        self.data = []
+    }
 }
 
 struct EditorMessage {
@@ -94,5 +104,56 @@ class Editor {
         self.window = window
         self.fontSize = fontSize
         self.cameraTarget = Vector2(x: Float(window.width/2), y: Float(window.height/2))
+    }
+    
+    func isElementSelected() -> Bool {
+        return self.selectedObject != -1
+    }
+    
+    func drawObjects() -> Void {
+        if (self.isElementSelected()) {
+            let selectedObject = self.objects[self.selectedObject];
+
+            if (selectedObject.width == 0 && selectedObject.height == 0) {
+                Raylib.drawCircleLines(
+                    selectedObject.x,
+                    selectedObject.y,
+                    5.0,
+                    .green
+                );
+            } else {
+                drawRect(
+                    Float32(selectedObject.x - 1),
+                    Float32(selectedObject.y - 1),
+                    Float32(selectedObject.width + 2),
+                    Float32(selectedObject.height + 2),
+                    Float32(selectedObject.rotation),
+                    .green
+                );
+            }
+        }
+        
+        for object in self.objects {
+            if (object.width == 0 && object.height == 0) {
+                Raylib.drawCircle(object.x, object.y, 5, self.objectTypes[object.type].color);
+            } else {
+                drawRect(
+                    Float32(object.x),
+                    Float32(object.y),
+                    Float32(object.width == 0 ? 1 : object.width),
+                    Float32(object.height == 0 ? 1 : object.height),
+                    Float32(object.rotation),
+                    self.objectTypes[object.type].color
+                );
+            }
+        }
+    }
+    
+    func control(window: Window) -> Void {
+        if (Raylib.isKeyPressed(.letterN)) {
+            let obj = Object(x: self.window.width / 2 - 50, y: self.window.height / 2 - 50, width: 100, height: 100)
+            self.objects.append(obj)
+            self.selectedObject = self.objects.count - 1
+        }
     }
 }

@@ -59,7 +59,7 @@ func main() {
     }
 
     while !exit {
-        //control(editor, windows, exporters)
+        editor.control(window: window)
 
         /*
         camera.zoom += cameraZoom;
@@ -78,16 +78,16 @@ func main() {
         Raylib.beginDrawing()
             Raylib.clearBackground(.darkGray)
             //drawGrid(editor, camera);
-            Raylib.beginMode2D(camera);
-                //drawObjects(&camera, &editor);
-            Raylib.endMode2D();
+            Raylib.beginMode2D(camera)
+                editor.drawObjects()
+            Raylib.endMode2D()
             //drawHelp(&editor);
             //drawWindows(&editor, &windows, exporters)
             if (editor.showFPS) { Raylib.drawFPS(20, 20) }
             //drawMessages(&editor);
         Raylib.endDrawing()
 
-        camera.zoom = 0
+        camera.zoom = 1
         //updateEditor(&editor);
 
         if Raylib.isKeyPressed(.escape) {
