@@ -24,11 +24,7 @@ class QuakeConsole {
         } else {
             self.openT -= dt * 3
         }
-        if self.openT < 0.0 {
-            self.openT = 0.0
-        } else if self.openT > 1.0 {
-            self.openT = 1
-        }
+        self.openT = clamp(self.openT, 0, 1)
     }
 
     func input() {
@@ -119,7 +115,7 @@ class QuakeConsole {
         let first = tokenized[0]
         switch first {
             case "clear_history":
-                self.history = []
+                self.history.removeAll()
             default:
                 ()
         }
@@ -134,6 +130,12 @@ class QuakeConsole {
 };
 
 func clamp(_ input: Int, _ lower: Int, _ upper: Int) -> Int {
+    if input < lower { return lower }
+    if input > upper { return upper }
+    return input
+}
+
+func clamp(_ input: Float32, _ lower: Float32, _ upper: Float32) -> Float32 {
     if input < lower { return lower }
     if input > upper { return upper }
     return input
