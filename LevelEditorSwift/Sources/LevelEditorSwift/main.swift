@@ -21,12 +21,19 @@ func main() {
         height: 1000,
         title: "Level Editor"
     )
+    
+    var camera = Camera2D()
+    camera.target = Vector2(x: Float(window.width)/2, y: Float(window.height)/2);
+    camera.offset = Vector2(x: Float(window.width)/2, y: Float(window.height)/2);
+    camera.rotation = 0.0;
+    camera.zoom = 1.0;
 
     let editor = Editor(
         version: 1,
         outputDelimiter: ";",
         window: window,
-        fontSize: 20
+        fontSize: 20,
+        camera: camera
     )
 
 
@@ -48,15 +55,7 @@ func main() {
         loadLevel(editor)
     }
 
-    var camera = Camera2D() 
-    camera.target = Vector2(x: Float(editor.window.width)/2, y: Float(editor.window.height)/2);
-    camera.offset = Vector2(x: Float(editor.window.width)/2, y: Float(editor.window.height)/2);
-    camera.rotation = 0.0;
-    camera.zoom = 1.0;
 
-    if (editor.objects.count > 0) {
-        editor.cameraTarget = Vector2(x: Float(editor.objects[0].x), y: Float(editor.objects[0].y));
-    }
 
     while !exit {
         editor.control(window: window)
@@ -78,7 +77,7 @@ func main() {
         Raylib.beginDrawing()
             Raylib.clearBackground(.darkGray)
             //drawGrid(editor, camera);
-            Raylib.beginMode2D(camera)
+            Raylib.beginMode2D(editor.camera)
                 editor.drawObjects()
             Raylib.endMode2D()
             //drawHelp(&editor);
@@ -87,7 +86,7 @@ func main() {
             //drawMessages(&editor);
         Raylib.endDrawing()
 
-        camera.zoom = 1
+        editor.camera.zoom = 1
         //updateEditor(&editor);
 
         if Raylib.isKeyPressed(.escape) {
