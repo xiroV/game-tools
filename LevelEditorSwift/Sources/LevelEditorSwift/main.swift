@@ -76,7 +76,7 @@ func main() {
 
         Raylib.beginDrawing()
             Raylib.clearBackground(.darkGray)
-            //drawGrid(editor, camera);
+            editor.drawGrid()
             Raylib.beginMode2D(editor.camera)
                 editor.drawObjects()
             Raylib.endMode2D()

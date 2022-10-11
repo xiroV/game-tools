@@ -132,6 +132,65 @@ class Editor: EditorMode  {
         return self.selectedObject != -1
     }
     
+    /*
+    func drawHelp() -> Void {
+        let xpos = self.window.width - self.fontSize * 8 - 30
+
+        let entries = [
+            "[n] new",
+            "[tab] cycle objects",
+            "[arrows] move",
+            "[wasd] resize",
+            "[del] delete",
+            "[t] switch type",
+            "[page/up] zoom",
+            "[y] edit types",
+            "[v] key/values",
+            "[m] export",
+            "[g] toggle grid",
+            "[c] copy block",
+            "[esc] deselect/exit",
+            "[F10] toggle FPS"
+        ]
+
+        if self.showHelp {
+            self.showHelp = !Raylib.guiWindowBox(Rectangle(x: Float32(xpos - 50), y: 10, width: 230, height: 432), "Help");
+
+            var ypos: Int32 = 50;
+            for i in 0..<entries.count {
+                Raylib.guiLabel(Rectangle(x: Float32(xpos - 40), y: Float32(ypos), width: 100, height: 20), entries[i]);
+                ypos += 8 + self.fontSize;
+            }
+        } else {
+            self.showHelp = Raylib.guiButton(Rectangle(x: Float32(xpos + 150), y: 10, width: 30, height: 30), "?");
+        }
+
+        if self.isElementSelected() {
+            Raylib.drawText(
+                self.objectTypes[self.objects[self.selectedObject].type].name,
+                20,
+                self.window.height - 30, self.fontSize,
+                self.objectTypes[self.objects[self.selectedObject].type].color
+            );
+        }
+    }
+     */
+    
+    func drawGrid() -> Void {
+        let color = Color(r: 255, g: 255, b: 255, a: 20);
+        if self.showGrid {
+            let yOffset = Int(self.camera.target.y) % CONSTANTS.GRID_DISTANCE;
+            for i in stride(from: 0, to: Int(self.window.height) + yOffset, by: CONSTANTS.GRID_DISTANCE) {
+                Raylib.drawLine(0, Int32(i - yOffset), self.window.width, Int32(i - yOffset), color);
+            }
+
+            let xOffset = Int(self.camera.target.x) % CONSTANTS.GRID_DISTANCE;
+            for j in stride(from: 0, to: Int(self.window.width) + xOffset, by: CONSTANTS.GRID_DISTANCE) {
+                Raylib.drawLine(Int32(j - xOffset), 0, Int32(j - xOffset), self.window.height, color);
+            }
+        }
+    }
+    
     func drawObjects() -> Void {
         if (self.isElementSelected()) {
             let selectedObject = self.objects[self.selectedObject];
@@ -211,23 +270,23 @@ class Editor: EditorMode  {
                 }
 
                 if Raylib.isKeyPressed(.letterM) {
-                    self.state = EditorState.export;
+                    self.state = EditorState.export
                 }
 
                 if Raylib.isKeyPressed(.pageUp) {
-                    self.camera.zoom += 0.5;
+                    self.camera.zoom += 0.5
                 }
 
                 if Raylib.isKeyPressed(.pageDown) {
-                    self.camera.zoom -= 0.5;
+                    self.camera.zoom -= 0.5
                 }
 
                 if Raylib.isKeyPressed(.letterY) {
-                    self.state = EditorState.blockTypeEditor;
+                    self.state = EditorState.blockTypeEditor
                 }
 
                 if Raylib.isKeyPressed(.letterG) {
-                    self.showGrid = !self.showGrid;
+                    self.showGrid = !self.showGrid
                 }
 
                 // NEW OBJECT
