@@ -28,6 +28,8 @@ func main() {
         window: window,
         fontSize: 20
     )
+    
+    let qc = QuakeConsole()
 
 
     Raylib.initWindow(editor.window.width, editor.window.height, editor.window.title)
@@ -83,16 +85,23 @@ func main() {
             Raylib.endMode2D();
             //drawHelp(&editor);
             //drawWindows(&editor, &windows, exporters)
+            qc.render(window: window)
+        
             if (editor.showFPS) { Raylib.drawFPS(20, 20) }
             //drawMessages(&editor);
         Raylib.endDrawing()
 
         camera.zoom = 0
         //updateEditor(&editor);
-
-        if Raylib.isKeyPressed(.escape) {
-            exit = true
+        
+        qc.input()
+        if !qc.isOpen {
+            if Raylib.isKeyPressed(.escape) {
+                exit = true
+            }
         }
+        
+        qc.update()
     }
 
     Raylib.closeWindow()
