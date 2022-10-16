@@ -1,4 +1,5 @@
 import Raylib
+import SwiftRaylibGui
 
 func loadLevel(_ editor: Editor) {
     // TODO Not yet implemented
@@ -36,18 +37,21 @@ func main() {
         camera: camera
     )
     
+
+    
     let qc = QuakeConsole()
 
 
     Raylib.initWindow(editor.window.width, editor.window.height, editor.window.title)
     Raylib.setTargetFPS(60)
-
+    let gui = SwiftRaylibGui(230, 432)
+    
     Raylib.setExitKey(.null)
 
     // TODO(Brian) Figure font out later
-    //let fontDefault = Raylib.loadFontEx("assets/fonts/OverpassMono/OverpassMono-Regular.ttf", editor.fontSize, 0, 0);
-    //SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
-    //GuiSetFont(fontDefault);
+    _ = Raylib.loadFont("assets/fonts/OverpassMono/OverpassMono-Regular.ttf")
+    
+    // Raylib.SetTextureFilter(fontDefault.texture, .TEXTURE_FILTER_BILINEAR);
 
     if (CommandLine.arguments.count > 1) {
         editor.levelName = CommandLine.arguments.first!
@@ -75,14 +79,15 @@ func main() {
 
         camera.target = editor.cameraTarget;
         */
-
+        
+        
         Raylib.beginDrawing()
             Raylib.clearBackground(.darkGray)
             editor.drawGrid()
             Raylib.beginMode2D(editor.camera)
                 editor.drawObjects()
             Raylib.endMode2D()
-            //drawHelp(&editor);
+            editor.drawHelp(gui: gui)
             //drawWindows(&editor, &windows, exporters)
             qc.render(window: window)
         
