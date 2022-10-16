@@ -1,12 +1,11 @@
 // TODO(Brian): Example/test exporter for now
-func swiftExporter() -> ExportConfig {
-    return ExportConfig(
-        id: "swift",
-        name: "Swift",
-        ext: "swift",
-        generate: { editor in
-            print("This generates swift output") 
+class SwiftExporter: Exporter {
+    static var id: String = "swift"
+    static var name: String = "Swift"
+    static var ext: String = "swift"
+    static func generate(editor: Editor) -> String {
+           print("This generates swift output") 
             return "Swift output"
-        }
-    )
+
+    }
 }

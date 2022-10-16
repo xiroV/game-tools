@@ -1,16 +1,16 @@
-struct ExportConfig {
-    let id: String
-    let name: String
-    let ext: String 
-    let generate: (Editor) -> String
+protocol Exporter {
+    static var id: String { get }
+    static var name: String { get }
+    static var ext: String { get }
+    static func generate(editor: Editor) -> String
 }
 
 class Export {
-    let exporters: Array<ExportConfig>
+    let exporters: Array<Exporter>
 
     init() {
         self.exporters = [
-            swiftExporter() 
+        //    swiftExporter() 
         ]
     }
 }
