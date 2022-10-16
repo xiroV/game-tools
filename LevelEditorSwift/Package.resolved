@@ -9,6 +9,15 @@
           "revision": "e7cbfd48d26f85994fecc85881b4f38ca23516a3",
           "version": null
         }
+      },
+      {
+        "package": "SwiftRaylibGui",
+        "repositoryURL": "git@github.com:xiroV/SwiftRaylibGui.git",
+        "state": {
+          "branch": "main",
+          "revision": "6428f836799275ed4d64877f83806d78582a6328",
+          "version": null
+        }
       }
     ]
   },
