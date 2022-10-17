@@ -60,26 +60,18 @@ func main() {
         editor.levelName = "TestLevel1.lvl"
         loadLevel(editor)
     }
-
-
+    
+    editor.addMessage("FOOOOOBAAAAAR", 5, MessageType.success)
 
     while !exit {
-        editor.control(window: window)
-
-        /*
-        camera.zoom += cameraZoom;
-        if (camera.zoom > 2.0f) {
-            cameraZoom = 2.0f;
-            camera.zoom = cameraZoom;
+        qc.input()
+        if !qc.isOpen {
+            if Raylib.isKeyPressed(.escape) {
+                exit = true
+            }
         }
-        else if (camera.zoom < 0.5f) {
-            cameraZoom = 0.5f;
-            camera.zoom = cameraZoom;
-        }
-
-        camera.target = editor.cameraTarget;
-        */
         
+        qc.update()
         
         Raylib.beginDrawing()
             Raylib.clearBackground(.darkGray)
@@ -89,26 +81,38 @@ func main() {
             Raylib.endMode2D()
             editor.drawHelp(gui: gui)
             //drawWindows(&editor, &windows, exporters)
+            editor.drawMessages();
             qc.render(window: window)
         
             if (editor.showFPS) { Raylib.drawFPS(20, 20) }
-            //drawMessages(&editor);
+
         Raylib.endDrawing()
+        
 
         editor.camera.zoom = 1
-        //updateEditor(&editor);
+        editor.update()
         
-        qc.input()
-        if !qc.isOpen {
-            if Raylib.isKeyPressed(.escape) {
-                exit = true
-            }
+        if qc.isOpen {
+            continue
         }
         
-        qc.update()
+        editor.control(window: editor.window)
+        editor.camera.zoom = clamp(camera.zoom + Raylib.getMouseWheelMove(), 0.5, 2.0)
+        editor.camera.target = editor.cameraTarget
     }
 
     Raylib.closeWindow()
+}
+
+func colorFromType(type: MessageType) -> Color {
+    switch (type) {
+        case .success:
+            return .green
+        case .error:
+            return .red
+        case .info:
+            return .white
+    }
 }
 
 

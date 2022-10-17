@@ -62,7 +62,7 @@ protocol EditorMode {
 
 struct EditorMessage {
     let message: String
-    let expiration: Float 
+    var expiration: Float
     let type: MessageType
 }
 
@@ -235,6 +235,35 @@ class Editor: EditorMode  {
                     self.objectTypes[object.type].color
                 );
             }
+        }
+    }
+    
+    func addMessage(_ message: String, _ expiration: Float, _ type: MessageType) -> Void {
+        self.messages.append(EditorMessage(message: message, expiration: expiration, type: type))
+    }
+    
+    func update() {
+        let delta = Raylib.getFrameTime();
+        for i in (0..<self.messages.count).reversed() {
+            self.messages[i].expiration -= delta
+            if self.messages[i].expiration < 0 {
+                self.messages.remove(at: i)
+            }
+        }
+    }
+    
+    func drawMessages() -> Void {
+        var offsetY = 20
+        for i in (0..<self.messages.count).reversed() {
+            let c = colorFromType(type: self.messages[i].type)
+            Raylib.drawText(
+                self.messages[i].message,
+                20,
+                Int32(Int(self.window.height) - 30 - offsetY),
+                self.fontSize,
+                c
+            )
+            offsetY += 20;
         }
     }
     
