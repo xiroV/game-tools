@@ -154,15 +154,16 @@ class Editor: EditorMode  {
             "[esc] deselect/exit",
             "[F10] toggle FPS"
         ]
-        gui.hspace(Int(xpos))
-        var _ = gui.checkbox(&self.showHelp)
-        gui.text("Help")
+        gui.hspace(Int(xpos + 50))
+        if gui.button("Show Help") {
+            self.showHelp = !self.showHelp
+        }
         gui.newline()
-        gui.hspace(Int(xpos))
+        gui.hspace(Int(xpos - 30))
 
-        
         if self.showHelp {
-            gui.beginScrollable()
+
+            gui.beginContext(.darkGray, 170, 450)
 
             var ypos: Int32 = 50;
             for i in 0..<entries.count {
@@ -170,7 +171,8 @@ class Editor: EditorMode  {
                 gui.newline()
                 ypos += 8 + self.fontSize;
             }
-            gui.endScrollable()
+
+            gui.endContext()
         }
 
         if self.isElementSelected() {
