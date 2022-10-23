@@ -1,4 +1,5 @@
 import Raylib
+import SwiftRaylibGui
 
 func loadLevel(_ editor: Editor) {
     // TODO Not yet implemented
@@ -36,18 +37,21 @@ func main() {
         camera: camera
     )
     
+
+    
     let qc = QuakeConsole()
 
 
     Raylib.initWindow(editor.window.width, editor.window.height, editor.window.title)
     Raylib.setTargetFPS(60)
-
+    let gui = SwiftRaylibGui(230, 432)
+    
     Raylib.setExitKey(.null)
 
     // TODO(Brian) Figure font out later
-    //let fontDefault = Raylib.loadFontEx("assets/fonts/OverpassMono/OverpassMono-Regular.ttf", editor.fontSize, 0, 0);
-    //SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
-    //GuiSetFont(fontDefault);
+    _ = Raylib.loadFont("assets/fonts/OverpassMono/OverpassMono-Regular.ttf")
+    
+    // Raylib.SetTextureFilter(fontDefault.texture, .TEXTURE_FILTER_BILINEAR);
 
     if (CommandLine.arguments.count > 1) {
         editor.levelName = CommandLine.arguments.first!
@@ -56,43 +60,10 @@ func main() {
         editor.levelName = "TestLevel1.lvl"
         loadLevel(editor)
     }
-
-
+    
+    editor.addMessage("FOOOOOBAAAAAR", 5, MessageType.success)
 
     while !exit {
-        editor.control(window: window)
-
-        /*
-        camera.zoom += cameraZoom;
-        if (camera.zoom > 2.0f) {
-            cameraZoom = 2.0f;
-            camera.zoom = cameraZoom;
-        }
-        else if (camera.zoom < 0.5f) {
-            cameraZoom = 0.5f;
-            camera.zoom = cameraZoom;
-        }
-
-        camera.target = editor.cameraTarget;
-        */
-
-        Raylib.beginDrawing()
-            Raylib.clearBackground(.darkGray)
-            editor.drawGrid()
-            Raylib.beginMode2D(editor.camera)
-                editor.drawObjects()
-            Raylib.endMode2D()
-            //drawHelp(&editor);
-            //drawWindows(&editor, &windows, exporters)
-            qc.render(window: window)
-        
-            if (editor.showFPS) { Raylib.drawFPS(20, 20) }
-            //drawMessages(&editor);
-        Raylib.endDrawing()
-
-        editor.camera.zoom = 1
-        //updateEditor(&editor);
-        
         qc.input()
         if !qc.isOpen {
             if Raylib.isKeyPressed(.escape) {
@@ -101,9 +72,47 @@ func main() {
         }
         
         qc.update()
+        
+        Raylib.beginDrawing()
+            Raylib.clearBackground(.darkGray)
+            editor.drawGrid()
+            Raylib.beginMode2D(editor.camera)
+                editor.drawObjects()
+            Raylib.endMode2D()
+            editor.drawHelp(gui: gui)
+            //drawWindows(&editor, &windows, exporters)
+            editor.drawMessages();
+            qc.render(window: window)
+        
+            if (editor.showFPS) { Raylib.drawFPS(20, 20) }
+
+        Raylib.endDrawing()
+        
+
+        editor.camera.zoom = 1
+        editor.update()
+        
+        if qc.isOpen {
+            continue
+        }
+        
+        editor.control(window: editor.window)
+        editor.camera.zoom = clamp(camera.zoom + Raylib.getMouseWheelMove(), 0.5, 2.0)
+        editor.camera.target = editor.cameraTarget
     }
 
     Raylib.closeWindow()
+}
+
+func colorFromType(type: MessageType) -> Color {
+    switch (type) {
+        case .success:
+            return .green
+        case .error:
+            return .red
+        case .info:
+            return .white
+    }
 }
 
 

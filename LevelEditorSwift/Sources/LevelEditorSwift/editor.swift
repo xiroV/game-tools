@@ -1,4 +1,5 @@
 import Raylib
+import SwiftRaylibGui
 
 enum EditorState {
     case editing
@@ -61,7 +62,7 @@ protocol EditorMode {
 
 struct EditorMessage {
     let message: String
-    let expiration: Float 
+    var expiration: Float
     let type: MessageType
 }
 
@@ -132,9 +133,10 @@ class Editor: EditorMode  {
         return self.selectedObject != -1
     }
     
-    /*
-    func drawHelp() -> Void {
-        let xpos = self.window.width - self.fontSize * 8 - 30
+    func drawHelp(gui: SwiftRaylibGui) -> Void {
+        let xpos = self.window.width - self.fontSize * 7
+
+        gui.begin()
 
         let entries = [
             "[n] new",
@@ -152,17 +154,25 @@ class Editor: EditorMode  {
             "[esc] deselect/exit",
             "[F10] toggle FPS"
         ]
+        gui.hspace(Int(xpos + 50))
+        if gui.button("Show Help") {
+            self.showHelp = !self.showHelp
+        }
+        gui.newline()
+        gui.hspace(Int(xpos - 30))
 
         if self.showHelp {
-            self.showHelp = !Raylib.guiWindowBox(Rectangle(x: Float32(xpos - 50), y: 10, width: 230, height: 432), "Help");
+
+            gui.beginContext(.darkGray, 170, 450)
 
             var ypos: Int32 = 50;
             for i in 0..<entries.count {
-                Raylib.guiLabel(Rectangle(x: Float32(xpos - 40), y: Float32(ypos), width: 100, height: 20), entries[i]);
+                gui.text(entries[i]);
+                gui.newline()
                 ypos += 8 + self.fontSize;
             }
-        } else {
-            self.showHelp = Raylib.guiButton(Rectangle(x: Float32(xpos + 150), y: 10, width: 30, height: 30), "?");
+
+            gui.endContext()
         }
 
         if self.isElementSelected() {
@@ -173,8 +183,8 @@ class Editor: EditorMode  {
                 self.objectTypes[self.objects[self.selectedObject].type].color
             );
         }
+        gui.end()
     }
-     */
     
     func drawGrid() -> Void {
         let color = Color(r: 255, g: 255, b: 255, a: 20);
@@ -227,6 +237,35 @@ class Editor: EditorMode  {
                     self.objectTypes[object.type].color
                 );
             }
+        }
+    }
+    
+    func addMessage(_ message: String, _ expiration: Float, _ type: MessageType) -> Void {
+        self.messages.append(EditorMessage(message: message, expiration: expiration, type: type))
+    }
+    
+    func update() {
+        let delta = Raylib.getFrameTime();
+        for i in (0..<self.messages.count).reversed() {
+            self.messages[i].expiration -= delta
+            if self.messages[i].expiration < 0 {
+                self.messages.remove(at: i)
+            }
+        }
+    }
+    
+    func drawMessages() -> Void {
+        var offsetY = 20
+        for i in (0..<self.messages.count).reversed() {
+            let c = colorFromType(type: self.messages[i].type)
+            Raylib.drawText(
+                self.messages[i].message,
+                20,
+                Int32(Int(self.window.height) - 30 - offsetY),
+                self.fontSize,
+                c
+            )
+            offsetY += 20;
         }
     }
     
