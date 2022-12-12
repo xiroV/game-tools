@@ -10,7 +10,8 @@ class Export {
 
     init() {
         self.exporters = [
-            swiftExporter() 
+            swiftExporter(),
+            zigExporter()
         ]
     }
 }

@@ -37,8 +37,6 @@ func main() {
         camera: camera
     )
     
-
-    
     let qc = QuakeConsole()
 
 
@@ -61,8 +59,6 @@ func main() {
         loadLevel(editor)
     }
     
-    editor.addMessage("FOOOOOBAAAAAR", 5, MessageType.success)
-
     while !exit {
         qc.input()
         if !qc.isOpen {
