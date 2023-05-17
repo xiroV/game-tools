@@ -5,6 +5,7 @@
 #include <vector>
 #include <fstream>
 #include "editor.hpp"
+#include "import/lvl.hpp"
 #include "export/lvl.hpp"
 #include "export/json.hpp"
 #include "export/cpp.hpp"
@@ -45,13 +46,12 @@ struct Windows {
     KeyValueEditorWindow keyValueEditorWindow;
 };
 
-string filename = "";
 
 void addMessage(Editor *editor, std::string message, float expiration, MessageType type) {
     editor->messages.emplace_back(EditorMessage{message, expiration, type});
 }
 
-void loadLevel(Editor *editor) {
+void loadLevel(std::string filename, Editor *editor, vector<Importer*> importers) {
     int version = 0;
 
     string fileLine;
@@ -71,57 +71,13 @@ void loadLevel(Editor *editor) {
             cout << endl << "Version of file read is newer than this binary supports. Will try its best to parse the input file." << endl << endl;
         }
 
-        // Only one version currently, so nothing special to do
         switch (version) {
             case 1:
-                while (getline(levelFile, fileLine)) {            
-                    string element;
-                    vector<int> lineElements;
-                    istringstream line(fileLine);
-
-                    int objectFieldCount = 0;
-                    while (objectFieldCount < 5 && getline(line, element, editor->outputDelimiter)) {
-                        lineElements.push_back(stoi(element));
-                        objectFieldCount++;
-                    }
-
-                    getline(line, element, editor->outputDelimiter);
-                    string typeName = element;
-                    int typeId = -1;
-                    for (unsigned int i = 0; i < editor->objectTypes.size(); i++) {
-                        if (editor->objectTypes[i].name == typeName) {
-                            typeId = i;
-                        }
-                    }
-
-                    Color color = (Color) {
-                        static_cast<unsigned char>(GetRandomValue(0,255)),
-                        static_cast<unsigned char>(GetRandomValue(0, 255)),
-                        static_cast<unsigned char>(GetRandomValue(0,255)),
-                        255
-                    }; 
-
-                    if (typeId < 0) {
-                        editor->objectTypes.push_back((ObjectType){typeName, color});
-                        typeId = editor->objectTypes.size() - 1;
-                    }
-
-                    Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4], typeId};
-                    
-                    while (getline(line, element, editor->outputDelimiter)) {
-                        istringstream keyValuePair = istringstream(element);
-                        string key;
-                        string value;
-                        getline(keyValuePair, key, '=');
-                        getline(keyValuePair, value, editor->outputDelimiter);
-                        obj.data.push_back({key, value});
-                    }
-
-                    editor->objects.push_back(obj);
-                }         
+                importers[0]->consume(&levelFile, editor);
                 break;
             case 2:
                 // TODO
+                // importers[1]->consume(&levelFile, editor);
                 addMessage(editor, "Import for this format is not implemented yet\n", 5, ERROR); 
                 break;
             default:
@@ -540,6 +496,8 @@ void drawMessages(Editor *editor) {
 }
 
 int main(int argc, char **argv) {
+    LvlImporter lvlImport;
+
     JsonExporter jsonExport;
     CppExporter cppExport;
     LvlExporter lvlExport;
@@ -573,6 +531,10 @@ int main(int argc, char **argv) {
     SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
     GuiSetFont(fontDefault);
 
+    vector<Importer*> importers = {
+        &lvlImport
+    };
+
     vector<Exporter*> exporters = {
         &jsonExport,
         &lvlExport,
@@ -581,11 +543,9 @@ int main(int argc, char **argv) {
     };
 
     if (argc > 1) {
-        filename = argv[1];
-        loadLevel(&editor);
+        loadLevel(argv[1], &editor, importers);
     } else {
-        filename = "TestLevel1.lvl";
-        loadLevel(&editor);
+        loadLevel("TestLevel1.lvl", &editor, importers);
     }
 
     Windows windows = {
