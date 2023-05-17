@@ -5,8 +5,9 @@
 #include <vector>
 #include <fstream>
 #include "editor.hpp"
-#include "export/cpp.hpp"
 #include "export/lvl.hpp"
+#include "export/json.hpp"
+#include "export/cpp.hpp"
 #include "export/swift.hpp"
 
 #ifndef RAYGUI
@@ -529,12 +530,13 @@ void drawMessages(Editor *editor) {
 }
 
 int main(int argc, char **argv) {
+    JsonExporter jsonExport;
     CppExporter cppExport;
     LvlExporter lvlExport;
     SwiftExporter swiftExport;
 
     Editor editor = {};
-    editor.version = 1;
+    editor.version = 2;
     editor.outputDelimiter = ';';
     editor.state = EditorState::Editing;
     editor.keyOrValue = KeyOrValue::Key;
@@ -562,6 +564,7 @@ int main(int argc, char **argv) {
     GuiSetFont(fontDefault);
 
     vector<Exporter*> exporters = {
+        &jsonExport,
         &lvlExport,
         &cppExport,
         &swiftExport
