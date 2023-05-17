@@ -6,7 +6,7 @@
 
 struct LvlExporter : Exporter {
     LvlExporter() {
-        setName("Lvl (default)");
+        setName("Lvl");
         setExtension("lvl");
     }
 
