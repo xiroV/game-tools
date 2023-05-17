@@ -72,50 +72,60 @@ void loadLevel(Editor *editor) {
         }
 
         // Only one version currently, so nothing special to do
-        while (getline(levelFile, fileLine)) {            
-            string element;
-            vector<int> lineElements;
-            istringstream line(fileLine);
+        switch (version) {
+            case 1:
+                while (getline(levelFile, fileLine)) {            
+                    string element;
+                    vector<int> lineElements;
+                    istringstream line(fileLine);
 
-            int objectFieldCount = 0;
-            while (objectFieldCount < 5 && getline(line, element, editor->outputDelimiter)) {
-                lineElements.push_back(stoi(element));
-                objectFieldCount++;
-            }
+                    int objectFieldCount = 0;
+                    while (objectFieldCount < 5 && getline(line, element, editor->outputDelimiter)) {
+                        lineElements.push_back(stoi(element));
+                        objectFieldCount++;
+                    }
 
-            getline(line, element, editor->outputDelimiter);
-            string typeName = element;
-            int typeId = -1;
-            for (unsigned int i = 0; i < editor->objectTypes.size(); i++) {
-                if (editor->objectTypes[i].name == typeName) {
-                    typeId = i;
-                }
-            }
+                    getline(line, element, editor->outputDelimiter);
+                    string typeName = element;
+                    int typeId = -1;
+                    for (unsigned int i = 0; i < editor->objectTypes.size(); i++) {
+                        if (editor->objectTypes[i].name == typeName) {
+                            typeId = i;
+                        }
+                    }
 
-            Color color = (Color) {
-                static_cast<unsigned char>(GetRandomValue(0,255)),
-                static_cast<unsigned char>(GetRandomValue(0, 255)),
-                static_cast<unsigned char>(GetRandomValue(0,255)),
-                255
-            }; 
+                    Color color = (Color) {
+                        static_cast<unsigned char>(GetRandomValue(0,255)),
+                        static_cast<unsigned char>(GetRandomValue(0, 255)),
+                        static_cast<unsigned char>(GetRandomValue(0,255)),
+                        255
+                    }; 
 
-            if (typeId < 0) {
-                editor->objectTypes.push_back((ObjectType){typeName, color});
-                typeId = editor->objectTypes.size() - 1;
-            }
+                    if (typeId < 0) {
+                        editor->objectTypes.push_back((ObjectType){typeName, color});
+                        typeId = editor->objectTypes.size() - 1;
+                    }
 
-            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4], typeId};
-            
-            while (getline(line, element, editor->outputDelimiter)) {
-                istringstream keyValuePair = istringstream(element);
-                string key;
-                string value;
-                getline(keyValuePair, key, '=');
-                getline(keyValuePair, value, editor->outputDelimiter);
-                obj.data.push_back({key, value});
-            }
+                    Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4], typeId};
+                    
+                    while (getline(line, element, editor->outputDelimiter)) {
+                        istringstream keyValuePair = istringstream(element);
+                        string key;
+                        string value;
+                        getline(keyValuePair, key, '=');
+                        getline(keyValuePair, value, editor->outputDelimiter);
+                        obj.data.push_back({key, value});
+                    }
 
-            editor->objects.push_back(obj);
+                    editor->objects.push_back(obj);
+                }         
+                break;
+            case 2:
+                // TODO
+                addMessage(editor, "Import for this format is not implemented yet\n", 5, ERROR); 
+                break;
+            default:
+                addMessage(editor, "Unable to read file version\n", 5, ERROR); 
         }
     } else {
         addMessage(editor, "Unable to open file\n", 5, ERROR); 
