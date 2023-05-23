@@ -77,7 +77,6 @@ void loadLevel(std::string filename, Editor *editor, map<string, Importer*> impo
     char buffer[50];
     sprintf(buffer, "Loaded %lu objects\n", editor->objects.size());
     addMessage(editor, buffer, 5, SUCCESS);
-    exit(0);
 }
 
 bool isElementSelected(Editor *editor) {
