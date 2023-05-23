@@ -6,6 +6,7 @@
 #include <fstream>
 #include "editor.hpp"
 #include "import/lvl.hpp"
+#include "import/json.hpp"
 #include "export/lvl.hpp"
 #include "export/json.hpp"
 #include "export/cpp.hpp"
@@ -51,38 +52,22 @@ void addMessage(Editor *editor, std::string message, float expiration, MessageTy
     editor->messages.emplace_back(EditorMessage{message, expiration, type});
 }
 
-void loadLevel(std::string filename, Editor *editor, vector<Importer*> importers) {
-    int version = 0;
-
+void loadLevel(std::string filename, Editor *editor, map<string, Importer*> importers) {
     string fileLine;
     ifstream levelFile;
+
+    string fileType = filename.substr(filename.find_last_of('.') + 1, filename.length());
+
+    if (importers.find(fileType) == importers.end()) {
+        addMessage(editor, "Unknown file type\n", 5, ERROR); 
+        return;
+    }
+
     levelFile.open(filename);
     editor->objectTypes = {};
 
     if (levelFile.is_open()) {
-        
-        // Read version
-        getline(levelFile, fileLine);
-        if (fileLine[0] == '#') {
-            version = stoi(fileLine.substr(string("#version ").length(), fileLine.length()));
-        };
-
-        if (version > editor->version) {
-            cout << endl << "Version of file read is newer than this binary supports. Will try its best to parse the input file." << endl << endl;
-        }
-
-        switch (version) {
-            case 1:
-                importers[0]->consume(&levelFile, editor);
-                break;
-            case 2:
-                // TODO
-                // importers[1]->consume(&levelFile, editor);
-                addMessage(editor, "Import for this format is not implemented yet\n", 5, ERROR); 
-                break;
-            default:
-                addMessage(editor, "Unable to read file version\n", 5, ERROR); 
-        }
+        importers[fileType]->consume(&levelFile, editor);
     } else {
         addMessage(editor, "Unable to open file\n", 5, ERROR); 
     }
@@ -92,6 +77,7 @@ void loadLevel(std::string filename, Editor *editor, vector<Importer*> importers
     char buffer[50];
     sprintf(buffer, "Loaded %lu objects\n", editor->objects.size());
     addMessage(editor, buffer, 5, SUCCESS);
+    exit(0);
 }
 
 bool isElementSelected(Editor *editor) {
@@ -497,7 +483,8 @@ void drawMessages(Editor *editor) {
 
 int main(int argc, char **argv) {
     LvlImporter lvlImport;
-
+    JsonImporter jsonImport;
+    
     JsonExporter jsonExport;
     CppExporter cppExport;
     LvlExporter lvlExport;
@@ -531,9 +518,9 @@ int main(int argc, char **argv) {
     SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
     GuiSetFont(fontDefault);
 
-    vector<Importer*> importers = {
-        &lvlImport
-    };
+    map<string, Importer*> importers;
+    importers["lvl"] = &lvlImport;
+    importers["json"] = &jsonImport;
 
     vector<Exporter*> exporters = {
         &jsonExport,
