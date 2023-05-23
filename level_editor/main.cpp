@@ -47,11 +47,6 @@ struct Windows {
     KeyValueEditorWindow keyValueEditorWindow;
 };
 
-
-void addMessage(Editor *editor, std::string message, float expiration, MessageType type) {
-    editor->messages.emplace_back(EditorMessage{message, expiration, type});
-}
-
 void loadLevel(std::string filename, Editor *editor, map<string, Importer*> importers) {
     string fileLine;
     ifstream levelFile;
@@ -59,7 +54,7 @@ void loadLevel(std::string filename, Editor *editor, map<string, Importer*> impo
     string fileType = filename.substr(filename.find_last_of('.') + 1, filename.length());
 
     if (importers.find(fileType) == importers.end()) {
-        addMessage(editor, "Unknown file type\n", 5, ERROR); 
+        editor->addMessage("Unknown file type\n", 5, ERROR); 
         return;
     }
 
@@ -69,14 +64,14 @@ void loadLevel(std::string filename, Editor *editor, map<string, Importer*> impo
     if (levelFile.is_open()) {
         importers[fileType]->consume(&levelFile, editor);
     } else {
-        addMessage(editor, "Unable to open file\n", 5, ERROR); 
+        editor->addMessage("Unable to open file\n", 5, ERROR); 
     }
 
     levelFile.close();
 
     char buffer[50];
     sprintf(buffer, "Loaded %lu objects\n", editor->objects.size());
-    addMessage(editor, buffer, 5, SUCCESS);
+    editor->addMessage(buffer, 5, SUCCESS);
 }
 
 bool isElementSelected(Editor *editor) {
@@ -90,9 +85,9 @@ void copyBlock(Editor *editor) {
         obj.data = selectedObject.data;
         editor->objects.push_back(obj);
         editor->selectedObject = editor->objects.size() - 1;
-        addMessage(editor, "Block copied\n", 3, SUCCESS);
+        editor->addMessage("Block copied\n", 3, SUCCESS);
     } else {
-        addMessage(editor, "No block selected\n", 3, ERROR);
+        editor->addMessage("No block selected\n", 3, ERROR);
     }
 }
 
