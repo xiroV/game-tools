@@ -21,7 +21,7 @@ struct LvlImporter : Importer {
         };
 
         if (version > editor->version) {
-            printf("Version of file read is newer than this binary supports. Will try its best to parse the input file.");
+            editor->addMessage("Version of file read is newer than this binary supports. Will try its best to parse the input file.", 5, INFO);
         }
 
 
