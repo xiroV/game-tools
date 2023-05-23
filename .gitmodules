@@ -4,3 +4,6 @@
 [submodule "level_editor/lib/raylib"]
 	path = level_editor/lib/raylib
 	url = git@github.com:raysan5/raylib.git
+[submodule "level_editor/lib/json"]
+	path = level_editor/lib/json
+	url = https://github.com/nlohmann/json.git

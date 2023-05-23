@@ -12,7 +12,20 @@ struct LvlImporter : Importer {
 
     void consume(ifstream *file, Editor *editor) {
         string fileLine;
+        unsigned int version = 0;
 
+        // Read version
+        getline(*file, fileLine);
+        if (fileLine[0] == '#') {
+            version = stoi(fileLine.substr(string("#version ").length(), fileLine.length()));
+        };
+
+        if (version > editor->version) {
+            printf("Version of file read is newer than this binary supports. Will try its best to parse the input file.");
+        }
+
+
+        // Parse
         while (getline(*file, fileLine)) {            
             string element;
             vector<int> lineElements;
@@ -33,14 +46,14 @@ struct LvlImporter : Importer {
                 }
             }
 
-            Color color = (Color) {
-                static_cast<unsigned char>(GetRandomValue(0,255)),
-                static_cast<unsigned char>(GetRandomValue(0, 255)),
-                static_cast<unsigned char>(GetRandomValue(0,255)),
-                255
-            }; 
-
             if (typeId < 0) {
+                Color color = (Color) {
+                    static_cast<unsigned char>(GetRandomValue(0,255)),
+                    static_cast<unsigned char>(GetRandomValue(0, 255)),
+                    static_cast<unsigned char>(GetRandomValue(0,255)),
+                    255
+                }; 
+
                 editor->objectTypes.push_back((ObjectType){typeName, color});
                 typeId = editor->objectTypes.size() - 1;
             }
