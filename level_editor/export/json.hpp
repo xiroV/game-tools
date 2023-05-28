@@ -2,61 +2,44 @@
 #define __EXPORT_JSON__
 
 #include "exporter.hpp"
+#include "../lib/json/single_include/nlohmann/json.hpp"
 
 struct JsonExporter : Exporter {
+    using json = nlohmann::json;
+
     JsonExporter() {
         setName("Json (default)");
         setExtension("json");
     }
 
-    // create string with i spaces
-    string s(int i) {
-        return string(i, ' ');
-    }
-
     string generate(Editor* editor) {
-        string output;
+        json output;
 
-        output += "{\n";
-        output += s(2) + "\"version\": " + to_string(editor->version) + ",\n";
-        output += s(2) + "\"objects\": [\n";
+        output["version"] = editor->version;
+        vector<json> objects;
 
         for (unsigned int i = 0; i < editor->objects.size(); i++) {
-            output += s(4) + "{\n";
-            output += s(6) + "\"x\": " + to_string(editor->objects[i].x) + ",\n";
-            output += s(6) + "\"y\": " + to_string(editor->objects[i].y) + ",\n";
-            output += s(6) + "\"width\": " + to_string(editor->objects[i].width) + ",\n";
-            output += s(6) + "\"height\": " + to_string(editor->objects[i].height) + ",\n";
-            output += s(6) + "\"rotation\": " + to_string(editor->objects[i].rotation) + ",\n";
-            output += s(6) + "\"type\": \"" + editor->objectTypes[editor->objects[i].type].name + "\",\n";
+            json object;
+            object["x"] = editor->objects[i].x;
+            object["y"] = editor->objects[i].y;
+            object["width"] = editor->objects[i].width;
+            object["height"] = editor->objects[i].height;
+            object["rotation"] = editor->objects[i].rotation;
+            object["type"] = editor->objectTypes[editor->objects[i].type].name;
 
-            if (editor->objects[i].data.size() < 1) {
-                output += s(6) + "\"data\": []\n";
-            } else {
-                output += s(6) + "\"data\": [\n";
-                
-                for (unsigned int d = 0; d < editor->objects[i].data.size(); d++) {
-                    ObjectData pair = editor->objects[i].data[d];
-                    if (pair.key.length() != 0) {
-                        output += s(8) + "\"" + pair.key + "\": \"" + pair.value + "\"";
-                    }
-
-                    output += d < editor->objects[i].data.size() - 1 ? ",\n" : "\n";
-                }
-
-                output += s(6) + "]\n";
+            json objectData;
+            for (unsigned int d = 0; d < editor->objects[i].data.size(); d++) {
+                ObjectData p = editor->objects[i].data[d];
+                objectData[p.key] = p.value;
             }
+            object["data"] = objectData;
 
-            output += s(4) + "}";
-
-            output += i < editor->objects.size() - 1 ? ",\n" : "\n";
+            objects.push_back(object);
         }
 
-        output += s(2) + "]\n";
+        output["objects"] = objects;
 
-        output += "}";
-
-        return output;
+        return output.dump(2);
     }
 
 };
