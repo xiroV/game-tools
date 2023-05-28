@@ -90,23 +90,24 @@ struct ExitWindow {
         GuiSetState(GUI_STATE_NORMAL);
 
         if(exitWindowSelectedOption == 0) GuiSetState(GUI_STATE_FOCUSED);
-        if (GuiButton({120, (float) yBase+editor->fontSize*5, (float) 75*scale, (float) editor->fontSize*2}, "Save & Exit")) {
+        if (GuiButton({(float) 120, (float) yBase+editor->fontSize*5, (float) editor->fontSize*8*scale, (float) editor->fontSize*2}, "Save & Exit")) {
             editor->levelName = levelName;
             if (!editor->levelName.empty() && !levelNameError) {
                 exporter->saveLevel(editor);
                 editor->closeEditor = true;
             }        
         }
+
         if(exitWindowSelectedOption == 0) GuiSetState(GUI_STATE_NORMAL);
 
         if(exitWindowSelectedOption == 1) GuiSetState(GUI_STATE_FOCUSED);
-        if (GuiButton({(float) 120 + 75 * scale + editor->fontSize, (float) yBase+editor->fontSize*5, (float) 120*scale, (float) editor->fontSize*2}, "Close without saving")) {
+        if (GuiButton({(float) 120 + editor->fontSize*8*scale + editor->fontSize, (float) yBase+editor->fontSize*5, (float) editor->fontSize*12*scale, (float) editor->fontSize*2}, "Close without saving")) {
             editor->closeEditor = true;
         }
         if(exitWindowSelectedOption == 1) GuiSetState(GUI_STATE_NORMAL);
 
         if(exitWindowSelectedOption == 2) GuiSetState(GUI_STATE_FOCUSED);
-        if (GuiButton({(float) 120 + 75 * scale + editor->fontSize + 120 * scale + editor->fontSize, (float) yBase + editor->fontSize * 5, (float) 60 * scale, (float) editor->fontSize * 2}, "Cancel")) {
+        if (GuiButton({(float) 470, (float) yBase + editor->fontSize * 5, (float) 60 * scale, (float) editor->fontSize * 2}, "Cancel")) {
             editor->state = EditorState::Editing; 
         }
         if(exitWindowSelectedOption == 2) GuiSetState(GUI_STATE_NORMAL);

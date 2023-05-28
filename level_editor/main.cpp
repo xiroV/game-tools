@@ -388,7 +388,7 @@ void drawRect(float x, float y, float width, float height, float rotation, Color
 }
 
 void drawHelp(Editor *editor) {
-    int xpos = editor->windowWidth-editor->fontSize*8-30;
+    int xpos = editor->windowWidth-editor->fontSize-15;
 
     static std::array<const char*, 14> entries = {{
         "[n] new",
@@ -408,21 +408,21 @@ void drawHelp(Editor *editor) {
     }};
 
     if (editor->showHelp) {
-        editor->showHelp = !GuiWindowBox({(float) xpos - 50, 10, 230, 432}, "Help");
+        editor->showHelp = !GuiWindowBox({(float) xpos - 175, 5, 200, entries.size()*27}, "Help");
 
-        int ypos = 50;
+        int ypos = 35;
         for (unsigned int i = 0; i < entries.size(); i++) {
-            GuiLabel({(float) xpos-40, (float) ypos, 100, 20}, entries[i]);
+            GuiLabel({(float) xpos-160, (float) ypos, 100, 20}, entries[i]);
             ypos += 8 + editor->fontSize;
         }
     } else {
-        editor->showHelp = GuiButton({(float) xpos + 150, 10, 30, 30}, "?");
+        editor->showHelp = GuiButton({(float) xpos, 5, 25, 25}, "?");
     }
 
     if (isElementSelected(editor)) {
         DrawText(
             editor->objectTypes[editor->objects[editor->selectedObject].type].name.c_str(),
-            20, editor->windowHeight - 30, editor->fontSize,
+            20, editor->windowHeight - 30, 20,
             editor->objectTypes[editor->objects[editor->selectedObject].type].color
         );
     }
@@ -521,7 +521,7 @@ void drawMessages(Editor *editor) {
             editor->messages[i].message.c_str(),
             20, 
             editor->windowHeight - 30 - offsetY,
-            editor->fontSize,
+            20,
             c
         );
         offsetY += 20;
@@ -544,7 +544,7 @@ int main(int argc, char **argv) {
     editor.selectedExporter = 0;
     editor.windowWidth = 1600;
     editor.windowHeight = 1000;
-    editor.fontSize = 20;
+    editor.fontSize = 16;
     editor.cameraTarget = {editor.windowWidth/2.0f, editor.windowHeight/2.0f};
     editor.closeEditor = false;
     editor.showGrid = true;
@@ -557,7 +557,7 @@ int main(int argc, char **argv) {
     // So ESCAPE isn't eaten by ShouldWindowClose();
     SetExitKey(KEY_NULL);
 
-    Font fontDefault = LoadFontEx("assets/fonts/OverpassMono/OverpassMono-Regular.ttf", editor.fontSize, 0, 0);
+    Font fontDefault = LoadFontEx("assets/fonts/Inconsolata/static/Inconsolata-Regular.ttf", editor.fontSize, 0, 0);
     SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
     GuiSetFont(fontDefault);
 
