@@ -27,7 +27,6 @@ struct JsonImporter : Importer {
 
         try {
             jsonObj = json::parse(content);
-
         } catch (nlohmann::json::parse_error& e) {
             printf("Error parsing json: %s\n", e.what());
             editor->addMessage("Error parsing level file", 5, ERROR);
