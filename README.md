@@ -26,7 +26,7 @@ The tools in this repository makes use of the following third-party libraries an
 
  - [raylib](https://www.raylib.com/)
  - [raygui](https://github.com/raysan5/raygui)
- - [Overpass Mono](https://fonts.google.com/specimen/Overpass+Mono) by Delve Withrington
+ - [Inconsolata](https://fonts.google.com/specimen/Inconsolata) font by [https://github.com/raphlinus/](Raph Levien)
 
 
 ## License
