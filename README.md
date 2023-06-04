@@ -26,7 +26,7 @@ The tools in this repository makes use of the following third-party libraries an
 
  - [raylib](https://www.raylib.com/)
  - [raygui](https://github.com/raysan5/raygui)
- - [Inconsolata](https://fonts.google.com/specimen/Inconsolata) font by [https://github.com/raphlinus/](Raph Levien)
+ - [Inconsolata](https://fonts.google.com/specimen/Inconsolata) font by [Raph Levien](https://github.com/raphlinus/)
 
 
 ## License
