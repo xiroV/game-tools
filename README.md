@@ -9,14 +9,6 @@ Bug reports, feature requests, ideas for new tools etc. can be created in [issue
 
 ## Building
 
-Clone the repository with
-
-```
-git clone --recurse-submodules https://github.com/xiroV/game-tools.git
-```
-
-to fetch all tools and submodules.
-
 Please refer to the README in each tool/project for specific instructions on how to build.
 
 
