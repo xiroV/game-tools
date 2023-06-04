@@ -79,6 +79,10 @@ struct Editor {
     bool showGrid;
     bool showHelp;
     bool showFPS;
+
+    void addMessage(std::string message, float expiration, MessageType type) {
+        messages.emplace_back(EditorMessage{message, expiration, type});
+    }
 };
 
 #endif

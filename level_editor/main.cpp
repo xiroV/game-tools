@@ -5,8 +5,11 @@
 #include <vector>
 #include <fstream>
 #include "editor.hpp"
-#include "export/cpp.hpp"
+#include "import/lvl.hpp"
+#include "import/json.hpp"
 #include "export/lvl.hpp"
+#include "export/json.hpp"
+#include "export/cpp.hpp"
 #include "export/swift.hpp"
 
 #ifndef RAYGUI
@@ -44,87 +47,31 @@ struct Windows {
     KeyValueEditorWindow keyValueEditorWindow;
 };
 
-string filename = "";
-
-void addMessage(Editor *editor, std::string message, float expiration, MessageType type) {
-    editor->messages.emplace_back(EditorMessage{message, expiration, type});
-}
-
-void loadLevel(Editor *editor) {
-    int version = 0;
-
+void loadLevel(std::string filename, Editor *editor, map<string, Importer*> importers) {
     string fileLine;
     ifstream levelFile;
+
+    string fileType = filename.substr(filename.find_last_of('.') + 1, filename.length());
+
+    if (importers.find(fileType) == importers.end()) {
+        editor->addMessage("Unknown file type\n", 5, ERROR); 
+        return;
+    }
+
     levelFile.open(filename);
     editor->objectTypes = {};
 
     if (levelFile.is_open()) {
-        
-        // Read version
-        getline(levelFile, fileLine);
-        if (fileLine[0] == '#') {
-            version = stoi(fileLine.substr(string("#version ").length(), fileLine.length()));
-        };
-
-        if (version > editor->version) {
-            cout << endl << "Version of file read is newer than this binary supports. Will try its best to parse the input file." << endl << endl;
-        }
-
-        // Only one version currently, so nothing special to do
-        while (getline(levelFile, fileLine)) {            
-            string element;
-            vector<int> lineElements;
-            istringstream line(fileLine);
-
-            int objectFieldCount = 0;
-            while (objectFieldCount < 5 && getline(line, element, editor->outputDelimiter)) {
-                lineElements.push_back(stoi(element));
-                objectFieldCount++;
-            }
-
-            getline(line, element, editor->outputDelimiter);
-            string typeName = element;
-            int typeId = -1;
-            for (unsigned int i = 0; i < editor->objectTypes.size(); i++) {
-                if (editor->objectTypes[i].name == typeName) {
-                    typeId = i;
-                }
-            }
-
-            Color color = (Color) {
-                static_cast<unsigned char>(GetRandomValue(0,255)),
-                static_cast<unsigned char>(GetRandomValue(0, 255)),
-                static_cast<unsigned char>(GetRandomValue(0,255)),
-                255
-            }; 
-
-            if (typeId < 0) {
-                editor->objectTypes.push_back((ObjectType){typeName, color});
-                typeId = editor->objectTypes.size() - 1;
-            }
-
-            Object obj = {lineElements[0], lineElements[1], lineElements[2], lineElements[3], lineElements[4], typeId};
-            
-            while (getline(line, element, editor->outputDelimiter)) {
-                istringstream keyValuePair = istringstream(element);
-                string key;
-                string value;
-                getline(keyValuePair, key, '=');
-                getline(keyValuePair, value, editor->outputDelimiter);
-                obj.data.push_back({key, value});
-            }
-
-            editor->objects.push_back(obj);
-        }
+        importers[fileType]->consume(&levelFile, editor);
     } else {
-        addMessage(editor, "Unable to open file\n", 5, ERROR); 
+        editor->addMessage("Unable to open file\n", 5, ERROR); 
     }
 
     levelFile.close();
 
     char buffer[50];
     sprintf(buffer, "Loaded %lu objects\n", editor->objects.size());
-    addMessage(editor, buffer, 5, SUCCESS);
+    editor->addMessage(buffer, 5, SUCCESS);
 }
 
 bool isElementSelected(Editor *editor) {
@@ -138,9 +85,9 @@ void copyBlock(Editor *editor) {
         obj.data = selectedObject.data;
         editor->objects.push_back(obj);
         editor->selectedObject = editor->objects.size() - 1;
-        addMessage(editor, "Block copied\n", 3, SUCCESS);
+        editor->addMessage("Block copied\n", 3, SUCCESS);
     } else {
-        addMessage(editor, "No block selected\n", 3, ERROR);
+        editor->addMessage("No block selected\n", 3, ERROR);
     }
 }
 
@@ -529,12 +476,16 @@ void drawMessages(Editor *editor) {
 }
 
 int main(int argc, char **argv) {
+    LvlImporter lvlImport;
+    JsonImporter jsonImport;
+    
+    JsonExporter jsonExport;
     CppExporter cppExport;
     LvlExporter lvlExport;
     SwiftExporter swiftExport;
 
     Editor editor = {};
-    editor.version = 1;
+    editor.version = 2;
     editor.outputDelimiter = ';';
     editor.state = EditorState::Editing;
     editor.keyOrValue = KeyOrValue::Key;
@@ -561,18 +512,21 @@ int main(int argc, char **argv) {
     SetTextureFilter(fontDefault.texture, TEXTURE_FILTER_BILINEAR);
     GuiSetFont(fontDefault);
 
+    map<string, Importer*> importers;
+    importers["lvl"] = &lvlImport;
+    importers["json"] = &jsonImport;
+
     vector<Exporter*> exporters = {
+        &jsonExport,
         &lvlExport,
         &cppExport,
         &swiftExport
     };
 
     if (argc > 1) {
-        filename = argv[1];
-        loadLevel(&editor);
+        loadLevel(argv[1], &editor, importers);
     } else {
-        filename = "TestLevel1.lvl";
-        loadLevel(&editor);
+        loadLevel("TestLevel1.lvl", &editor, importers);
     }
 
     Windows windows = {
