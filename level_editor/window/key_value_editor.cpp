@@ -3,7 +3,7 @@
 #include "../lib/raygui/src/raygui.h"
 #endif
 
-#include "../lib/raylib/src/raylib.h"
+#include "../lib/raylib/include/raylib.h"
 #include "../editor.hpp"
 #include "../export/exporter.hpp"
 #include <iostream>

@@ -3,7 +3,7 @@
 #include "../lib/raygui/src/raygui.h"
 #endif
 
-#include "../lib/raylib/src/raylib.h"
+#include "../lib/raylib/include/raylib.h"
 #include "../editor.hpp"
 #include "../export/exporter.hpp"
 #include <iostream>
@@ -112,7 +112,16 @@ struct BlockTypeEditorWindow {
 
             DrawRectangle(15 + editor->windowWidth / 2, offsetY, editor->fontSize*2, editor->fontSize*2, editor->objectTypes[currentIndex].color);
             Color c = editor->objectTypes[currentIndex].color;
-            editor->objectTypes[currentIndex].color = GuiColorPicker(Rectangle{15 + editor->windowWidth / 2 + editor->fontSize*2 + 10, (float) offsetY, editor->fontSize*2.0f, editor->fontSize*2.0f}, c);
+            editor->objectTypes[currentIndex].color = GuiColorPicker(
+                Rectangle{
+                    15 + editor->windowWidth / 2 + editor->fontSize*2 + 10,
+                    (float) offsetY,
+                    editor->fontSize*2.0f,
+                    editor->fontSize*2.0f
+                },
+                "This is some text?",
+                c
+            );
 
             if (editing) {
                 GuiDrawText("[end] random color", {10 + editor->windowWidth / 2 + 150, (float) offsetY, editor->windowWidth / 2 - 130, (float) editor->fontSize * 2}, 0, BLACK);
