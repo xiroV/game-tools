@@ -3,7 +3,7 @@
 #include "../lib/raygui/src/raygui.h"
 #endif
 
-#include "../lib/raylib/src/raylib.h"
+#include "../lib/raylib/include/raylib.h"
 #include "../editor.hpp"
 #include "../export/exporter.hpp"
 #include <iostream>
@@ -87,9 +87,9 @@ struct ExitWindow {
             true
         );
         
-        GuiSetState(GUI_STATE_NORMAL);
+        GuiSetState(STATE_NORMAL);
 
-        if(exitWindowSelectedOption == 0) GuiSetState(GUI_STATE_FOCUSED);
+        if(exitWindowSelectedOption == 0) GuiSetState(STATE_FOCUSED);
         if (GuiButton({(float) 120, (float) yBase+editor->fontSize*5, (float) editor->fontSize*8*scale, (float) editor->fontSize*2}, "Save & Exit")) {
             editor->levelName = levelName;
             if (!editor->levelName.empty() && !levelNameError) {
@@ -98,18 +98,18 @@ struct ExitWindow {
             }        
         }
 
-        if(exitWindowSelectedOption == 0) GuiSetState(GUI_STATE_NORMAL);
+        if(exitWindowSelectedOption == 0) GuiSetState(STATE_NORMAL);
 
-        if(exitWindowSelectedOption == 1) GuiSetState(GUI_STATE_FOCUSED);
+        if(exitWindowSelectedOption == 1) GuiSetState(STATE_FOCUSED);
         if (GuiButton({(float) 120 + editor->fontSize*8*scale + editor->fontSize, (float) yBase+editor->fontSize*5, (float) editor->fontSize*12*scale, (float) editor->fontSize*2}, "Close without saving")) {
             editor->closeEditor = true;
         }
-        if(exitWindowSelectedOption == 1) GuiSetState(GUI_STATE_NORMAL);
+        if(exitWindowSelectedOption == 1) GuiSetState(STATE_NORMAL);
 
-        if(exitWindowSelectedOption == 2) GuiSetState(GUI_STATE_FOCUSED);
+        if(exitWindowSelectedOption == 2) GuiSetState(STATE_FOCUSED);
         if (GuiButton({(float) 470, (float) yBase + editor->fontSize * 5, (float) 60 * scale, (float) editor->fontSize * 2}, "Cancel")) {
             editor->state = EditorState::Editing; 
         }
-        if(exitWindowSelectedOption == 2) GuiSetState(GUI_STATE_NORMAL);
+        if(exitWindowSelectedOption == 2) GuiSetState(STATE_NORMAL);
     }
 };

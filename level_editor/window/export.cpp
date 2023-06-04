@@ -3,7 +3,7 @@
 #include "../lib/raygui/src/raygui.h"
 #endif
 
-#include "../lib/raylib/src/raylib.h"
+#include "../lib/raylib/include/raylib.h"
 #include "../editor.hpp"
 #include "../export/exporter.hpp"
 #include <iostream>
@@ -91,14 +91,14 @@ struct ExportWindow {
         }
 
 
-        if (editor->levelnameError) { GuiSetState(GUI_STATE_DISABLED); } else {GuiSetState(GUI_STATE_NORMAL); }
+        if (editor->levelnameError) { GuiSetState(STATE_DISABLED); } else {GuiSetState(STATE_NORMAL); }
         GuiTextBox(
             {120, (float)yBase+editor->fontSize*2, (float) editor->windowWidth-240, (float) editor->fontSize*2},
             levelName,
             12,
             true
         );
-        GuiSetState(GUI_STATE_NORMAL);
+        GuiSetState(STATE_NORMAL);
 
         GuiLabel({120, (float) yBase + editor->fontSize * 4, 500, (float) editor->fontSize * 2}, "Export type");
 
@@ -111,20 +111,20 @@ struct ExportWindow {
 
         editor->selectedExporter = GuiComboBox({120, (float) yBase+editor->fontSize*6, (float) editor->windowWidth-240, (float) editor->fontSize*2}, const_cast<char*>(exportOptions.c_str()), editor->selectedExporter);
 
-        if(exportWindowSelectedOption == 0) GuiSetState(GUI_STATE_FOCUSED);
+        if(exportWindowSelectedOption == 0) GuiSetState(STATE_FOCUSED);
         if (GuiButton({120, (float) yBase+editor->fontSize*9, (float) 75*scale, (float) editor->fontSize*2}, "Export")) {
             editor->levelName = levelName;
             if (!editor->levelName.empty() && !levelNameError) {
                 exporters[editor->selectedExporter]->saveLevel(editor);
             }
         }
-        if(exportWindowSelectedOption == 0) GuiSetState(GUI_STATE_NORMAL);
+        if(exportWindowSelectedOption == 0) GuiSetState(STATE_NORMAL);
 
-        if(exportWindowSelectedOption == 1) GuiSetState(GUI_STATE_FOCUSED);
+        if(exportWindowSelectedOption == 1) GuiSetState(STATE_FOCUSED);
         if (GuiButton({(float) 120 + 75 * scale + editor->fontSize, (float) yBase+editor->fontSize*9, (float) 60*scale, (float) editor->fontSize*2}, "Cancel")) {
             editor->state = EditorState::Editing;
         }
-        if(exportWindowSelectedOption == 1) GuiSetState(GUI_STATE_NORMAL);
+        if(exportWindowSelectedOption == 1) GuiSetState(STATE_NORMAL);
     }
 };
 

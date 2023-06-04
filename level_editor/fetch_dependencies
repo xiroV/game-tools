@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+LIBS_PATH=lib
+RAYLIB_VERSION="4.5.0"
+RAYGUI_VERSION="3.6"
+
+mkdir -p $LIBS_PATH
+cd $LIBS_PATH
+
+# raylib
+curl -sL -o "raylib.tar.gz" "https://github.com/raysan5/raylib/releases/download/${RAYLIB_VERSION}/raylib-${RAYLIB_VERSION}_linux_amd64.tar.gz"
+tar -xzf "raylib.tar.gz"
+mv "raylib-${RAYLIB_VERSION}_linux_amd64" "raylib"
+rm "raylib.tar.gz"
+
+# raygui
+curl -sL -o "raygui.tar.gz" "https://github.com/raysan5/raygui/archive/refs/tags/${RAYGUI_VERSION}.tar.gz"
+tar -xzf "raygui.tar.gz"
+mv "raygui-${RAYGUI_VERSION}" "raygui"
+rm "raygui.tar.gz"
+
+
+
+
+
+
+

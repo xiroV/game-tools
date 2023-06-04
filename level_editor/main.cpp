@@ -15,7 +15,7 @@
 #include "lib/raygui/src/raygui.h"
 #endif
 
-#include "lib/raylib/src/raylib.h"
+#include "lib/raylib/include/raylib.h"
 #include "window/export.cpp"
 #include "window/exit.cpp"
 #include "window/block_type_editor.cpp"
