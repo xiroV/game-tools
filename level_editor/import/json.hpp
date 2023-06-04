@@ -20,7 +20,6 @@ struct JsonImporter : Importer {
         string content;
         json jsonObj;
 
-        // This step shouldn't be necessary, but couldn't make it work otherwise
         while (getline(*file, line)) {
             content += line;
         }  
