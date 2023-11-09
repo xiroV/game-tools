@@ -38,3 +38,4 @@ level_editor/editor
 .vscode/
 
 .DS_Store
+level_editor/zig-cache
