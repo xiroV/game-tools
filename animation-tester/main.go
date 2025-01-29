@@ -13,11 +13,15 @@ Utility for testing animations. The following features should be supported:
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"math"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
+
+//go:embed assets/fonts/Noto_Sans/static/NotoSans-Light.ttf
+var NotoSansFontData []byte
 
 type Mode string
 
@@ -229,6 +233,26 @@ func control(data *Data) {
 		data.lastUpdate += delta
 	}
 
+	if data.mode == ModeEdit {
+		if len(data.textures) > 0 {
+			if rl.IsKeyPressed(rl.KeyLeft) {
+				data.frame -= 1
+
+				if data.frame < 0 {
+					data.frame = len(data.textures) - 1
+				}
+			}
+
+			if rl.IsKeyPressed(rl.KeyRight) {
+				data.frame += 1
+
+				if data.frame >= len(data.textures) {
+					data.frame = 0
+				}
+			}
+		}
+	}
+
 	if rl.IsKeyPressed(rl.KeyUp) {
 		data.interval += 0.01
 	}
@@ -237,7 +261,7 @@ func control(data *Data) {
 		data.interval -= 0.01
 	}
 
-	if rl.IsKeyPressed(rl.KeyDelete) && len(data.textures) > 0 {
+	if (rl.IsKeyPressed(rl.KeyDelete) || rl.IsKeyPressed(rl.KeyBackspace)) && len(data.textures) > 0 {
 		newTextures := []rl.Texture2D{}
 		for index, texture := range data.textures {
 			if data.frame == index {
@@ -247,6 +271,14 @@ func control(data *Data) {
 		}
 
 		data.textures = newTextures
+	}
+
+	if rl.IsKeyPressed(rl.KeySpace) {
+		if data.mode == ModeEdit {
+			data.mode = ModePlay
+		} else {
+			data.mode = ModeEdit
+		}
 	}
 
 	// Mouse control
@@ -301,15 +333,25 @@ func control(data *Data) {
 			offsetX += int(displayWidth)
 		}
 	}
+
+	if len(data.textures) > 0 {
+		if data.frame >= len(data.textures) {
+			data.frame = len(data.textures) - 1
+		}
+	}
 }
 
 func main() {
-	rl.InitWindow(int32(screenWidth), int32(screenHeight), "AnimationTester")
 	rl.SetWindowState(rl.FlagMsaa4xHint + rl.FlagVsyncHint)
+	rl.InitWindow(int32(screenWidth), int32(screenHeight), "AnimationTester")
 
 	defer rl.CloseWindow()
 
-	defaultFont := rl.LoadFontEx("assets/fonts/Noto_Sans/NotoSans-VariableFont_wdth,wght.ttf", 20, nil, 0)
+	defaultFont := rl.GetFontDefault()
+
+	if len(NotoSansFontData) > 0 {
+		defaultFont = rl.LoadFontFromMemory(".ttf", NotoSansFontData, 20, nil)
+	}
 
 	data := Data{
 		textures:   []rl.Texture2D{},
