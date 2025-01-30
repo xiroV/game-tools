@@ -1,2 +1,4 @@
-animation-tester
+bin
+build
+releases
 .nvimrc
